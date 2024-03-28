@@ -15,14 +15,13 @@
 
   import BaseNode from "./Nodes/BaseNode/BaseNode.svelte";
   import Edge from "./Nodes/BaseNode/Edge.svelte";
+  import "@xyflow/svelte/dist/style.css";
   import "./Nodes/BaseNode/style.css";
 
   import TypeNode from "./Nodes/TypeNode.svelte";
   import KeyBindNode from "./Nodes/KeyBindNode.svelte";
 
   import { initialNodes, initialEdges } from "./nodes-and-edges";
-
-  import "@xyflow/svelte/dist/style.css";
 
   const nodes = writable<NodeType[]>(initialNodes);
   const edges = writable<EdgeType[]>(initialEdges);

@@ -91,6 +91,7 @@
   position: fixed;
   border-width: 2px;
   box-shadow: var(--node-box-shadow);
+  transition: 0.3s;
 }
 
 .svelte-flow__node:focus {
@@ -133,10 +134,6 @@
 
 .svelte-flow__handle.valid {
   background: #27d209;
-}
-
-.svelte-flow__handle {
-  transition: 0.2s;
 }
 
 .svelte-flow__handle.target:hover {
