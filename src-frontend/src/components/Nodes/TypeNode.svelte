@@ -2,7 +2,7 @@
   import BaseNode, {
     type BaseNodeProps,
   } from "@components/Nodes/BaseNode/BaseNode.svelte";
-  import "./style.css";
+  import "./node-style.css";
 
   type $$Props = BaseNodeProps & {
     data: {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import BaseNode, { type BaseNodeProps } from "./BaseNode/BaseNode.svelte";
 
-  import "./style.css";
+  import "./node-style.css";
 
   type $$Props = BaseNodeProps & {
     data: {
