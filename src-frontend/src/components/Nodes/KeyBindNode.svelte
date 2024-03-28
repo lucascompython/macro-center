@@ -1,7 +1,5 @@
 <script lang="ts">
-  import BaseNode, {
-    type BaseNodeProps,
-  } from "@components/BaseNode/BaseNode.svelte";
+  import BaseNode, { type BaseNodeProps } from "./BaseNode/BaseNode.svelte";
 
   import "./style.css";
 
