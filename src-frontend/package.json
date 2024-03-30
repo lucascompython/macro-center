@@ -15,8 +15,8 @@
     "@tauri-apps/api": "2.0.0-beta.6",
     "@tauri-apps/plugin-global-shortcut": "^2.0.0-beta.2",
     "@xyflow/svelte": "^0.0.39",
-    "astro": "^4.5.10",
-    "astro-compress": "^2.2.19",
+    "astro": "^4.5.12",
+    "astro-compress": "^2.2.20",
     "svelte": "^4.2.12",
     "typescript": "^5.4.3"
   }
