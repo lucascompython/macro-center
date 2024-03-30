@@ -133,9 +133,9 @@
     background-position-y: 0.2rem;
     padding-right: 2rem;
     transition: border 0.2s ease;
+  }
 
-    &:focus {
-      border: 1px solid #e92a67;
-    }
+  select:focus {
+    border: 1px solid #e92a67;
   }
 </style>

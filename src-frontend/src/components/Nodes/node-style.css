@@ -25,10 +25,10 @@
 
   font-size: 0.9rem;
   font-weight: 400;
+}
 
-  &:focus {
-    border: 1px solid #e92a67;
-  }
+.input-container span:focus {
+  border: 1px solid #e92a67;
 }
 
 .optional-placeholder::before {
