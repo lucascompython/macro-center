@@ -93,5 +93,5 @@
       role="textbox"
       bind:textContent={data.cancelKey}
     ></span>
-  </div></BaseNode
->
+  </div>
+</BaseNode>
