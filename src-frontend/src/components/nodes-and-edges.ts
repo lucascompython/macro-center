@@ -1,4 +1,5 @@
 import type { Node, Edge } from "@xyflow/svelte";
+import { KeyPressMode } from "@utils";
 
 export const initialNodes: Node[] = [
   {
@@ -57,6 +58,20 @@ export const initialNodes: Node[] = [
       subline: "Define a Key Bind",
     },
     type: "keyBindNode",
+  },
+  {
+    id: "9",
+    position: { x: 1750, y: 500 },
+    data: {
+      title: "Press Key",
+      subline: "Press a given key",
+      key: "K",
+      numTimes: 3,
+      delay: 0.5,
+      cancelKey: "esc",
+      mode: KeyPressMode.RELEASE,
+    },
+    type: "keyPressNode",
   },
 ];
 

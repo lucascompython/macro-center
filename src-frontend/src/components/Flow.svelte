@@ -20,6 +20,7 @@
 
   import TypeNode from "./Nodes/TypeNode.svelte";
   import KeyBindNode from "./Nodes/KeyBindNode.svelte";
+  import KeyPressNode from "./Nodes/KeyPressNode.svelte";
 
   import { initialNodes, initialEdges } from "./nodes-and-edges";
 
@@ -32,6 +33,7 @@
     base: BaseNode,
     typeNode: TypeNode,
     keyBindNode: KeyBindNode,
+    keyPressNode: KeyPressNode,
   };
 
   const edgeTypes: EdgeTypes = {

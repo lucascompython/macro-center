@@ -15,10 +15,10 @@
 
   border-radius: 0.25rem;
   background: #4c4d4f;
-  min-width: 5rem;
+  min-width: 3rem;
   max-width: 180px;
 
-  margin-left: 1rem;
+  margin-left: 0.5rem;
 
   border: 1px solid transparent;
   transition: border 0.2s ease;
@@ -29,4 +29,9 @@
   &:focus {
     border: 1px solid #e92a67;
   }
+}
+
+.optional-placeholder::before {
+  content: "Optional";
+  color: rgb(160, 154, 154);
 }
