@@ -3,3 +3,8 @@ export enum Direction {
   PRESS,
   RELEASE,
 }
+
+export enum CoordinateMode {
+  ABSOLUTE,
+  RELATIVE,
+}

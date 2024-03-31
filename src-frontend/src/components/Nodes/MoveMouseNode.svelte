@@ -1,21 +1,17 @@
 <script lang="ts">
-  import BaseNode, {
-    type BaseNodeProps,
-  } from "@components/Nodes/BaseNode/BaseNode.svelte";
+  import BaseNode, { type BaseNodeProps } from "./BaseNode/BaseNode.svelte";
 
   import "./node-style.css";
 
-  import { Direction } from "@utils";
-
   import NumberOnlySpan from "@components/NumberOnlySpan.svelte";
+
+  import { CoordinateMode } from "@utils";
 
   type $$Props = BaseNodeProps & {
     data: {
-      key: string;
-      numTimes: number;
-      mode: Direction;
-      delay?: number;
-      cancelKey?: string;
+      x: number;
+      y: number;
+      coordinateMode: CoordinateMode;
     };
   };
 
@@ -51,13 +47,11 @@
   // #endregion
 
   export let data: $$Props["data"] = {
-    title: "Key Press Node",
-    subline: "Subline",
-    key: "F6",
-    numTimes: 1,
-    mode: Direction.CLICK,
-    cancelKey: "esc",
-    delay: 0.4,
+    title: "Move Mouse",
+    subline: "Moves the mouse to a specific position",
+    x: 0,
+    y: 0,
+    coordinateMode: CoordinateMode.RELATIVE,
   };
 </script>
 
@@ -81,38 +75,18 @@
   {positionAbsoluteY}
 >
   <div class="input-container">
-    Key: <span class="nodrag" contenteditable="true" bind:innerText={data.key}
-    ></span>
+    X: <NumberOnlySpan intOnly={true} bind:value={data.x} />
   </div>
 
   <div class="input-container">
-    Number of times:
-
-    <NumberOnlySpan bind:value={data.numTimes} intOnly={true} />
+    Y: <NumberOnlySpan intOnly={true} bind:value={data.y} />
   </div>
 
   <div class="input-container">
-    Mode:
-    <select class="nodrag" bind:value={data.mode}>
-      <option value={Direction.CLICK}>Click</option>
-      <option value={Direction.PRESS}>Press</option>
-      <option value={Direction.RELEASE}>Release</option>
+    Coordinate mode:
+    <select class="nodrag" bind:value={data.coordinateMode}>
+      <option value={CoordinateMode.RELATIVE}>Relative</option>
+      <option value={CoordinateMode.ABSOLUTE}>Absolute</option>
     </select>
-  </div>
-
-  <div class="input-container">
-    Delay:
-    <NumberOnlySpan bind:value={data.delay} />
-  </div>
-
-  <div class="input-container">
-    Cancel key:
-    <span
-      class="nodrag"
-      contenteditable="true"
-      role="textbox"
-      class:optional-placeholder={!data.cancelKey}
-      bind:textContent={data.cancelKey}
-    ></span>
   </div>
 </BaseNode>

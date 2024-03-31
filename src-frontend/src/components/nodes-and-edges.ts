@@ -1,5 +1,5 @@
 import type { Node, Edge } from "@xyflow/svelte";
-import { Direction } from "@utils";
+import { Direction, CoordinateMode } from "@utils";
 
 export const initialNodes: Node[] = [
   {
@@ -82,6 +82,18 @@ export const initialNodes: Node[] = [
       delay: 1.7,
     },
     type: "delayNode",
+  },
+  {
+    id: "11",
+    position: { x: 2250, y: 250 },
+    data: {
+      title: "Move Mouse",
+      subline: "Move the mouse to a given position",
+      mode: CoordinateMode.ABSOLUTE,
+      x: 100,
+      y: 100,
+    },
+    type: "moveMouseNode",
   },
 ];
 
