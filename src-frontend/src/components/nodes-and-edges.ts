@@ -73,6 +73,16 @@ export const initialNodes: Node[] = [
     },
     type: "keyPressNode",
   },
+  {
+    id: "10",
+    position: { x: 2150, y: 250 },
+    data: {
+      title: "Delay",
+      subline: "Wait for x seconds",
+      delay: 1.7,
+    },
+    type: "delayNode",
+  },
 ];
 
 export const initialEdges: Edge[] = [

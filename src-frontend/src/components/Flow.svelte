@@ -21,6 +21,7 @@
   import TypeNode from "./Nodes/TypeNode.svelte";
   import KeyBindNode from "./Nodes/KeyBindNode.svelte";
   import KeyPressNode from "./Nodes/KeyPressNode.svelte";
+  import DelayNode from "./Nodes/DelayNode.svelte";
 
   import { initialNodes, initialEdges } from "./nodes-and-edges";
 
@@ -34,6 +35,7 @@
     typeNode: TypeNode,
     keyBindNode: KeyBindNode,
     keyPressNode: KeyPressNode,
+    delayNode: DelayNode,
   };
 
   const edgeTypes: EdgeTypes = {
