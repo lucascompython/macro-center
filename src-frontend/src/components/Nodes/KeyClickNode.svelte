@@ -131,10 +131,13 @@
     background-repeat: no-repeat;
     background-position: right 0.5rem center;
     padding-right: 2rem;
-    transition: border 0.2s ease;
+    transition:
+      border 0.2s ease,
+      background-image 0.2s ease;
   }
 
   select:focus {
     border: 1px solid #e92a67;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708z"/></svg>');
   }
 </style>
