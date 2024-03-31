@@ -1,5 +1,5 @@
-export enum KeyPressMode {
+export enum Direction {
+  CLICK,
   PRESS,
-  HOLD,
   RELEASE,
 }

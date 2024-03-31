@@ -5,7 +5,7 @@
 
   import "./node-style.css";
 
-  import { KeyPressMode } from "@utils";
+  import { Direction } from "@utils";
 
   import NumberOnlySpan from "@components/NumberOnlySpan.svelte";
 
@@ -13,7 +13,7 @@
     data: {
       key: string;
       numTimes: number;
-      mode: KeyPressMode;
+      mode: Direction;
       delay?: number;
       cancelKey?: string;
     };
@@ -55,7 +55,7 @@
     subline: "Subline",
     key: "F6",
     numTimes: 1,
-    mode: KeyPressMode.HOLD,
+    mode: Direction.CLICK,
     cancelKey: "esc",
     delay: 0.4,
   };
@@ -94,9 +94,9 @@
   <div class="input-container">
     Mode:
     <select class="nodrag" bind:value={data.mode}>
-      <option value={KeyPressMode.PRESS}>Press</option>
-      <option value={KeyPressMode.HOLD}>Hold</option>
-      <option value={KeyPressMode.RELEASE}>Release</option>
+      <option value={Direction.CLICK}>Click</option>
+      <option value={Direction.PRESS}>Press</option>
+      <option value={Direction.RELEASE}>Release</option>
     </select>
   </div>
 
