@@ -71,7 +71,7 @@ export const initialNodes: Node[] = [
       cancelKey: "esc",
       mode: Direction.CLICK,
     },
-    type: "keyPressNode",
+    type: "keyClickNode",
   },
   {
     id: "10",

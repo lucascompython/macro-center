@@ -20,7 +20,7 @@
 
   import TypeNode from "./Nodes/TypeNode.svelte";
   import KeyBindNode from "./Nodes/KeyBindNode.svelte";
-  import KeyPressNode from "./Nodes/KeyPressNode.svelte";
+  import KeyClickNode from "./Nodes/KeyClickNode.svelte";
   import DelayNode from "./Nodes/DelayNode.svelte";
 
   import { initialNodes, initialEdges } from "./nodes-and-edges";
@@ -34,7 +34,7 @@
     base: BaseNode,
     typeNode: TypeNode,
     keyBindNode: KeyBindNode,
-    keyPressNode: KeyPressNode,
+    keyClickNode: KeyClickNode,
     delayNode: DelayNode,
   };
 
