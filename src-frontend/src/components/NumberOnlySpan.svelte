@@ -37,6 +37,6 @@
   role="textbox"
   tabindex="0"
   style="max-width: {maxWidth}px;"
-  on:keypress={(e) => handleKeyPress(e)}
+  on:keypress={handleKeyPress}
   on:input={handleInput}>{value}</span
 >
