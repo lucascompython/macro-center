@@ -1,5 +1,5 @@
 import type { Node, Edge } from "@xyflow/svelte";
-import { Direction, CoordinateMode } from "@utils";
+import { Direction, CoordinateMode, Axis } from "@utils";
 
 export const initialNodes: Node[] = [
   {
@@ -94,6 +94,17 @@ export const initialNodes: Node[] = [
       y: 100,
     },
     type: "moveMouseNode",
+  },
+  {
+    id: "12",
+    position: { x: 2250, y: 500 },
+    data: {
+      axis: Axis.VERTICAL,
+      title: "Scroll Mouse",
+      subline: "Scroll the mouse wheel",
+      length: 3,
+    },
+    type: "scrollMouseNode",
   },
 ];
 

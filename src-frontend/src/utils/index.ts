@@ -8,3 +8,8 @@ export enum CoordinateMode {
   ABSOLUTE,
   RELATIVE,
 }
+
+export enum Axis {
+  VERTICAL,
+  HORIZONTAL,
+}

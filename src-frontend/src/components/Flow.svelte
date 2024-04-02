@@ -23,6 +23,7 @@
   import KeyClickNode from "./Nodes/KeyClickNode.svelte";
   import DelayNode from "./Nodes/DelayNode.svelte";
   import MoveMouseNode from "./Nodes/MoveMouseNode.svelte";
+  import ScrollMouseNode from "./Nodes/ScrollMouseNode.svelte";
 
   import { initialNodes, initialEdges } from "./nodes-and-edges";
 
@@ -38,6 +39,7 @@
     keyClickNode: KeyClickNode,
     delayNode: DelayNode,
     moveMouseNode: MoveMouseNode,
+    scrollMouseNode: ScrollMouseNode,
   };
 
   const edgeTypes: EdgeTypes = {
