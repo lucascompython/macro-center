@@ -8,14 +8,11 @@
       currentTarget: EventTarget & HTMLSpanElement;
     }
   ): boolean {
-    if (e.key === "." && !intOnly) {
-      if (e.currentTarget.innerText.includes(".")) {
-        e.preventDefault();
-        return false;
-      }
-      return true;
-    }
-    if (isNaN(parseFloat(e.key))) {
+    const isDot = e.key === ".";
+    const alreadyHasDot = e.currentTarget.innerText.includes(".");
+    const isNotNumber = isNaN(parseFloat(e.key));
+
+    if ((isDot && (intOnly || alreadyHasDot)) || isNotNumber) {
       e.preventDefault();
       return false;
     }
