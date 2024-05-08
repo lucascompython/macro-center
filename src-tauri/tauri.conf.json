@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "identifier": "com.autospammer.com",
   "build": {
-    "beforeDevCommand": "cd src-frontend && bun run dev",
-    "beforeBuildCommand": "cd src-frontend && bun run build",
+    "beforeDevCommand": "cd src-frontend && bunx --bun astro dev",
+    "beforeBuildCommand": "cd src-frontend && bunx --bun astro build",
     "devUrl": "http://localhost:4321",
     "frontendDist": "../src-frontend/dist"
   },
