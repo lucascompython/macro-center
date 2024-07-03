@@ -238,6 +238,8 @@ def build_release(args: argparse.Namespace) -> float | None:
                 "build-std=std,panic_abort",
                 "-Z",
                 "build-std-features=panic_immediate_abort",
+                "-Z",
+                "trim-paths",
             ]
         )
 
