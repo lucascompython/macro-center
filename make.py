@@ -221,15 +221,9 @@ def build_release(args: argparse.Namespace) -> float | None:
         else:
             rustflags.append("-C link-arg=-fuse-ld=mold")
 
-    if "msvc" in target:
-        rustflags.append(
-            "-C target-feature=+crt-static"
-        )  # Make sure the binary is statically linked
-        # rustflags.append("-C linker=rust-lld")
-
     if args.nightly:
         command.insert(1, "+nightly")
-        rustflags.append("-Zlocation-detail=none")
+        rustflags.extend(["-Zlocation-detail=none", "-Zfmt-debug=none"])
 
         command.extend(
             [
@@ -347,6 +341,7 @@ def main() -> None:
     if len(sys.argv) == 1:
         sys.argv.append("-h")
         args = parse_args()
+        return
 
     global VERBOSE
     VERBOSE = args.verbose

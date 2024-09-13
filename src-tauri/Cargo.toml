@@ -8,10 +8,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0.0-beta", features = [] }
+tauri-build = { version = "2.0.0-rc", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0-beta", features = [] }
+tauri = { version = "2.0.0-rc", features = [] }
 # tauri-plugin-global-shortcut = "2.0.0-beta"
 tauri-plugin-global-shortcut = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
 enigo = { git = "https://github.com/enigo-rs/enigo" }
