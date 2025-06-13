@@ -1,0 +1,15 @@
+[build]
+target = "./index.html"
+minify = "on_release"
+
+[watch]
+ignore = ["./src-tauri"]
+
+
+[tools]
+wasm_opt = "version_123"
+wasm_bindgen = "0.2.100"
+
+[serve]
+port = 1420
+open = false
