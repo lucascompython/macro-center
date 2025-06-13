@@ -1,6 +1,7 @@
 use leptos::task::spawn_local;
 use leptos::{ev::SubmitEvent, prelude::*};
 use serde::{Deserialize, Serialize};
+use thaw::{Button, ConfigProvider};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -45,23 +46,21 @@ pub fn App() -> impl IntoView {
 
             <div class="row">
                 <a href="https://tauri.app" target="_blank">
-                    <img src="public/tauri.svg" class="logo tauri" alt="Tauri logo"/>
+                    <img src="public/tauri.svg" class="logo tauri" alt="Tauri logo" />
                 </a>
                 <a href="https://docs.rs/leptos/" target="_blank">
-                    <img src="public/leptos.svg" class="logo leptos" alt="Leptos logo"/>
+                    <img src="public/leptos.svg" class="logo leptos" alt="Leptos logo" />
                 </a>
             </div>
             <p>"Click on the Tauri and Leptos logos to learn more."</p>
 
+            <Button>"Ola"</Button>
+
             <form class="row" on:submit=greet>
-                <input
-                    id="greet-input"
-                    placeholder="Enter a name..."
-                    on:input=update_name
-                />
+                <input id="greet-input" placeholder="Enter a name..." on:input=update_name />
                 <button type="submit">"Greet"</button>
             </form>
-            <p>{ move || greet_msg.get() }</p>
+            <p>{move || greet_msg.get()}</p>
         </main>
     }
 }
