@@ -92,22 +92,12 @@ trim-paths = true
 
     let mut success = true;
 
-    match build_frontend(&project_root, base_rustflags) {
-        Ok(_) => (),
-        Err(e) => {
-            eprintln!("Frontend build failed: {}", e);
-            success = false;
-        }
-    }
-
-    if success {
-        if let Some(target) = args.target.as_ref() {
-            match build_app(target, &project_root, base_rustflags) {
-                Ok(_) => (),
-                Err(e) => {
-                    eprintln!("App build failed: {}", e);
-                    success = false;
-                }
+    if let Some(target) = args.target.as_ref() {
+        match build_app(target, &project_root, base_rustflags) {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("App build failed: {}", e);
+                success = false;
             }
         }
     }
@@ -158,19 +148,6 @@ fn run_command(
     } else {
         Ok(())
     }
-}
-
-fn build_frontend(project_root: &PathBuf, base_rustflags: &str) -> Result<(), Box<dyn Error>> {
-    println!("Building Macro-Center frontend...");
-    let frontend_rustflags = format!("{} -C target-feature=+bulk-memory", base_rustflags);
-    let trunk_args = vec!["build", "--release"];
-
-    run_command(
-        "trunk",
-        &trunk_args,
-        &[("RUSTFLAGS", &frontend_rustflags)],
-        project_root,
-    )
 }
 
 fn build_app(

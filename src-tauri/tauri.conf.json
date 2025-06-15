@@ -5,12 +5,12 @@
   "identifier": "com.macro-center.app",
   "build": {
     "removeUnusedCommands": true,
-    "beforeDevCommand": "trunk serve",
+    "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
-    "frontendDist": "../dist"
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../build"
   },
   "app": {
-    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Macro Center",
