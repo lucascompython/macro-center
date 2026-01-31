@@ -64,3 +64,9 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 
 - Page/mode to record user actions and convert them into macros.
 - Create libmacrocenter, a rust library that can be used to listen to global shortcuts and simulate mouse and keyboard events, so that other applications/languages can use it as a dependency.
+
+## TODO (mostly non urgent):
+
+- Make it so you can create nodes by clicking on the canvas or grabbing an edge and dropping it somewhere, not only from the sidebar.
+- Fix horrible input UX in nodes.
+- For key bind node, make it so you can record keybinds instead of typing them.
