@@ -19,3 +19,7 @@ cargo xtask dev
 # or
 cargo xtask release
 ```
+
+## Demo
+
+![macro-center-demo](demo/demo.png)
