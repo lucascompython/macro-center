@@ -12,7 +12,7 @@ export const initialNodes: Node[] = [
     data: {
       title: "Key Bind",
       subline: "Trigger macro with key combination",
-      keyBind: "Ctrl+Shift+M",
+      shortcut: "Ctrl+Shift+M",
     },
   },
   {
@@ -20,11 +20,9 @@ export const initialNodes: Node[] = [
     position: { x: 350, y: 100 },
     type: "typeNode",
     data: {
-      title: "Type Text",
-      subline: "Types a given text",
-      text: "Hello World!",
-      delay: 0.5,
-      cancelKey: "",
+      title: 'Type Text',
+      subline: 'Types "Hello World"',
+      text: 'Hello World!'
     },
   },
   {
@@ -47,7 +45,6 @@ export const initialNodes: Node[] = [
       subline: "Press/release/click a key",
       key: "Enter",
       mode: ActionMode.CLICK,
-      delay: 0.1,
     },
   },
   {

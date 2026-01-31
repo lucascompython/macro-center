@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
-	import NumberInput from '$lib/components/NumberInput.svelte';
 	import { ActionMode, type KeyNodeData } from '$lib/types';
 
 	interface Props {
@@ -20,19 +19,6 @@
 	function handleModeChange(e: Event & { currentTarget: HTMLSelectElement }) {
 		updateNodeData(id, { mode: e.currentTarget.value as ActionMode });
 	}
-
-	function handleDelayChange(value: number) {
-		updateNodeData(id, { delay: value });
-	}
-
-	function handleCancelKeyChange(e: Event & { currentTarget: HTMLSpanElement }) {
-		updateNodeData(id, { cancelKey: e.currentTarget.innerText });
-	}
-
-	let delay = $state(data.delay ?? 0.5);
-	$effect(() => {
-		handleDelayChange(delay);
-	});
 </script>
 
 <BaseNode
@@ -56,20 +42,5 @@
 			<option value={ActionMode.PRESS}>Press</option>
 			<option value={ActionMode.RELEASE}>Release</option>
 		</select>
-	</div>
-
-	<div class="input-container">
-		<span>Delay (s):</span>
-		<NumberInput bind:value={delay} maxWidth="80px" />
-	</div>
-
-	<div class="input-container">
-		<span>Cancel key:</span>
-		<span
-			class="nodrag optional-placeholder"
-			contenteditable="true"
-			role="textbox"
-			oninput={handleCancelKeyChange}>{data.cancelKey ?? ''}</span
-		>
 	</div>
 </BaseNode>

@@ -29,20 +29,17 @@ export interface BaseNodeData {
 }
 
 export interface KeyBindNodeData extends BaseNodeData {
-  keyBind: string;
+  shortcut: string;
 }
 
 export interface TypeNodeData extends BaseNodeData {
   text: string;
   delay: number;
-  cancelKey?: string;
 }
 
 export interface KeyNodeData extends BaseNodeData {
   key: string;
   mode: ActionMode;
-  delay?: number;
-  cancelKey?: string;
 }
 
 export interface MousePressNodeData extends BaseNodeData {
