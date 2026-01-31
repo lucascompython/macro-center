@@ -1,1 +1,1 @@
-{"desktop-capability":{"identifier":"desktop-capability","description":"","local":true,"windows":["main"],"permissions":["global-shortcut:allow-register","global-shortcut:allow-unregister"],"platforms":["linux","macOS","windows"]}}
+{"default":{"identifier":"default","description":"Capability for the main window","local":true,"windows":["main"],"permissions":["core:default","opener:default"]}}

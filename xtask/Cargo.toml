@@ -1,0 +1,16 @@
+cargo-features = ["profile-rustflags"]
+
+[package]
+name = "release"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+argh = "0.1"
+
+
+[profile.fast-build]
+inherits = "dev"
+debug = false
+strip = "debuginfo"
+rustflags = ["-Clinker=clang", "-Clink-arg=-fuse-ld=/usr/bin/wild", "-Zthreads=32", "-Zcodegen-backend=cranelift"]

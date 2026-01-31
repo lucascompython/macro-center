@@ -4,18 +4,18 @@ A Crossplatform Visual Programming/Scripting App for keyboard and mouse macros
 
 ## How to build
 
-+ Install tauri-cli 2.0
-+ Install bun
-
-Optional
-
-+ Install nightly rust toolchain for binary size optimizations
-+ Install upx for compression
-+ On linux for reading the memory usage install the GNU time command
-+ Install the mold linker if you wish to use it
+You need the nightly toolchain of Rust installed.  
+For development builds, you also need to install the cranelift backend for better compile times.
 
 ```bash
-git clone https://github.com/lucascompython/auto-spammer
-cd auto-spammer
-./make.py --help
+git clone https://github.com/lucascompython/macro-center
+cd macro-center
+# install deps
+cd src && bun install
+
+# build
+cd ..
+cargo xtask dev
+# or
+cargo xtask release
 ```
