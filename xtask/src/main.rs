@@ -95,8 +95,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn build_dev(_args: DevArgs) -> Result<(), Box<dyn Error>> {
     let project_root = env::current_dir()?;
 
-    let dev_rustflags =
-        "-Clinker=clang -Clink-arg=-fuse-ld=/usr/bin/wild -Zthreads=32 -Zcodegen-backend=cranelift";
+    let dev_rustflags = "-Clinker=clang -Clink-arg=-fuse-ld=/usr/bin/wild -Zthreads=32 -Zcodegen-backend=cranelift -Zshare-generics=y";
 
     println!("Building Macro-Center in dev mode (fast build)...");
 
