@@ -23,70 +23,70 @@
 
 	<div class="category">
 		<h3>Triggers</h3>
-		<div
+		<button
 			class="dndnode trigger"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'keyBindNode', { title: 'Key Bind', subline: 'Trigger macro' })}
 		>
 			Key Bind
-		</div>
+		</button>
 	</div>
 
 	<div class="category">
 		<h3>Actions</h3>
-		<div
+		<button
 			class="dndnode action"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'typeNode', { title: 'Type Text', text: 'Hello' })}
 		>
 			Type Text
-		</div>
-		<div
+		</button>
+		<button
 			class="dndnode action"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'keyNode', { title: 'Key Press', mode: ActionMode.CLICK })}
 		>
 			Key Press
-		</div>
-		<div
+		</button>
+		<button
 			class="dndnode action"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'mousePressNode', { title: 'Mouse Click', button: MouseButton.LEFT })}
 		>
 			Mouse Click
-		</div>
-		<div
+		</button>
+		<button
 			class="dndnode action"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'mouseMoveNode', { title: 'Move Mouse', x: 0, y: 0 })}
 		>
 			Move Mouse
-		</div>
-		<div
+		</button>
+		<button
 			class="dndnode action"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'scrollMouseNode', { title: 'Scroll Mouse', amount: 3 })}
 		>
 			Scroll Mouse
-		</div>
+		</button>
 	</div>
 
 	<div class="category">
 		<h3>Logic</h3>
-		<div
+		<button
 			class="dndnode logic"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'delayNode', { title: 'Delay', delay: 1000 })}
 		>
 			Delay
-		</div>
-		<div
+		</button>
+		<button
 			class="dndnode logic"
 			draggable="true"
 			ondragstart={(event) => onDragStart(event, 'conditionalNode', { title: 'Conditional', condition: 'true' })}
 		>
 			Conditional
-		</div>
+		</button>
 	</div>
 </aside>
 
