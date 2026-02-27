@@ -1,17 +1,12 @@
 <script lang="ts">
-	import { 
-		ActionMode, 
-		CoordinateMode, 
-		Axis, 
-		MouseButton 
-	} from '$lib/types';
+	import { ActionMode, CoordinateMode, Axis, MouseButton } from "$lib/types";
 
 	function onDragStart(event: DragEvent, nodeType: string, data: any = {}) {
 		if (!event.dataTransfer) return;
-		
+
 		const payload = JSON.stringify({ type: nodeType, data });
-		event.dataTransfer.setData('application/svelteflow', payload);
-		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData("application/svelteflow", payload);
+		event.dataTransfer.effectAllowed = "move";
 	}
 </script>
 
@@ -26,7 +21,11 @@
 		<button
 			class="dndnode trigger"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'keyBindNode', { title: 'Key Bind', subline: 'Trigger macro' })}
+			ondragstart={(event) =>
+				onDragStart(event, "keyBindNode", {
+					title: "Key Bind",
+					subline: "Trigger macro",
+				})}
 		>
 			Key Bind
 		</button>
@@ -37,35 +36,56 @@
 		<button
 			class="dndnode action"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'typeNode', { title: 'Type Text', text: 'Hello' })}
+			ondragstart={(event) =>
+				onDragStart(event, "typeNode", {
+					title: "Type Text",
+					text: "Hello",
+				})}
 		>
 			Type Text
 		</button>
 		<button
 			class="dndnode action"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'keyNode', { title: 'Key Press', mode: ActionMode.CLICK })}
+			ondragstart={(event) =>
+				onDragStart(event, "keyNode", {
+					title: "Key Press",
+					mode: ActionMode.CLICK,
+				})}
 		>
 			Key Press
 		</button>
 		<button
 			class="dndnode action"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'mousePressNode', { title: 'Mouse Click', button: MouseButton.LEFT })}
+			ondragstart={(event) =>
+				onDragStart(event, "mousePressNode", {
+					title: "Mouse Click",
+					button: MouseButton.LEFT,
+				})}
 		>
 			Mouse Click
 		</button>
 		<button
 			class="dndnode action"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'mouseMoveNode', { title: 'Move Mouse', x: 0, y: 0 })}
+			ondragstart={(event) =>
+				onDragStart(event, "mouseMoveNode", {
+					title: "Move Mouse",
+					x: 0,
+					y: 0,
+				})}
 		>
 			Move Mouse
 		</button>
 		<button
 			class="dndnode action"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'scrollMouseNode', { title: 'Scroll Mouse', amount: 3 })}
+			ondragstart={(event) =>
+				onDragStart(event, "scrollMouseNode", {
+					title: "Scroll Mouse",
+					amount: 3,
+				})}
 		>
 			Scroll Mouse
 		</button>
@@ -76,14 +96,22 @@
 		<button
 			class="dndnode logic"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'delayNode', { title: 'Delay', delay: 1000 })}
+			ondragstart={(event) =>
+				onDragStart(event, "delayNode", {
+					title: "Delay",
+					delay: 1000,
+				})}
 		>
 			Delay
 		</button>
 		<button
 			class="dndnode logic"
 			draggable="true"
-			ondragstart={(event) => onDragStart(event, 'conditionalNode', { title: 'Conditional', condition: 'true' })}
+			ondragstart={(event) =>
+				onDragStart(event, "conditionalNode", {
+					title: "Conditional",
+					condition: "true",
+				})}
 		>
 			Conditional
 		</button>
@@ -99,7 +127,7 @@
 		height: 100%;
 		padding: 1rem;
 		width: 250px;
-		font-family: 'Inter', sans-serif;
+		font-family: "Inter", sans-serif;
 		overflow-y: auto;
 	}
 
@@ -145,6 +173,7 @@
 		transition: all 0.2s ease;
 		display: flex;
 		align-items: center;
+		width: 100%;
 	}
 
 	.dndnode:hover {
@@ -155,7 +184,7 @@
 	}
 
 	.dndnode::before {
-		content: '';
+		content: "";
 		display: block;
 		width: 8px;
 		height: 8px;
