@@ -1949,6 +1949,7 @@ name = "macro-center"
 version = "0.1.0"
 dependencies = [
  "enigo",
+ "global-hotkey",
  "serde",
  "serde_json",
  "tauri",
