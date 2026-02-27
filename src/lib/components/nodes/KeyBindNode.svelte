@@ -12,8 +12,8 @@
 
 	const { updateNodeData } = useSvelteFlow();
 
-	function handleKeyBindChange(e: Event & { currentTarget: HTMLSpanElement }) {
-		updateNodeData(id, { shortcut: e.currentTarget.innerText });
+	function handleKeyBindChange(e: Event & { currentTarget: HTMLInputElement }) {
+		updateNodeData(id, { shortcut: e.currentTarget.value });
 	}
 </script>
 
@@ -28,11 +28,6 @@
 >
 	<div class="input-container">
 		<span>Key Bind:</span>
-		<span
-			class="nodrag"
-			contenteditable="true"
-			role="textbox"
-			oninput={handleKeyBindChange}>{data.shortcut ?? 'F6'}</span
-		>
+		<input class="nodrag" type="text" value={data.shortcut ?? 'F6'} oninput={handleKeyBindChange} />
 	</div>
 </BaseNode>

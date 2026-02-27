@@ -196,7 +196,27 @@
 	font-weight: 400;
 }
 
-.input-container span:focus {
+.input-container input[type="text"] {
+	background: none;
+	outline: none;
+	border: none;
+	color: white;
+	cursor: text;
+	border-radius: 0.25rem;
+	background: #4c4d4f;
+	min-width: 4rem;
+	max-width: 180px;
+	padding: 0.1rem 0.25rem;
+	margin-left: 0.5rem;
+	border: 1px solid transparent;
+	transition: border 0.2s ease;
+	font-size: 0.9rem;
+	font-weight: 400;
+	font-family: inherit;
+}
+
+.input-container span:focus,
+.input-container input[type="text"]:focus {
 	border: 1px solid #e92a67;
 }
 

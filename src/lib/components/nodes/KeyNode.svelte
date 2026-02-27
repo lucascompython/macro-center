@@ -12,8 +12,8 @@
 
 	const { updateNodeData } = useSvelteFlow();
 
-	function handleKeyChange(e: Event & { currentTarget: HTMLSpanElement }) {
-		updateNodeData(id, { key: e.currentTarget.innerText });
+	function handleKeyChange(e: Event & { currentTarget: HTMLInputElement }) {
+		updateNodeData(id, { key: e.currentTarget.value });
 	}
 
 	function handleModeChange(e: Event & { currentTarget: HTMLSelectElement }) {
@@ -30,9 +30,7 @@
 >
 	<div class="input-container">
 		<span>Key:</span>
-		<span class="nodrag" contenteditable="true" role="textbox" oninput={handleKeyChange}
-			>{data.key ?? 'Enter'}</span
-		>
+		<input class="nodrag" type="text" value={data.key ?? 'Enter'} oninput={handleKeyChange} />
 	</div>
 
 	<div class="input-container">

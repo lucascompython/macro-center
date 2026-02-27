@@ -25,8 +25,8 @@
 			connectionState.startHandle?.type === 'source'
 	);
 
-	function handleConditionChange(e: Event & { currentTarget: HTMLSpanElement }) {
-		updateNodeData(id, { condition: e.currentTarget.innerText });
+	function handleConditionChange(e: Event & { currentTarget: HTMLInputElement }) {
+		updateNodeData(id, { condition: e.currentTarget.value });
 	}
 
 	function handleSettingsClick() {
@@ -52,9 +52,7 @@
 			<div class="content">
 				<div class="input-container">
 					<span>Condition:</span>
-					<span class="nodrag" contenteditable="true" role="textbox" oninput={handleConditionChange}
-						>{data.condition ?? 'value > 0'}</span
-					>
+					<input class="nodrag" type="text" value={data.condition ?? 'value > 0'} oninput={handleConditionChange} />
 				</div>
 
 				<div class="outputs">

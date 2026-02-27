@@ -7,33 +7,33 @@
 
 	let { value = $bindable(0), intOnly = false, maxWidth = '140px' }: Props = $props();
 
-	function handleKeyPress(e: KeyboardEvent & { currentTarget: EventTarget & HTMLSpanElement }) {
+	function handleInput(e: Event & { currentTarget: HTMLInputElement }) {
+		const parsed = parseFloat(e.currentTarget.value);
+		if (!isNaN(parsed)) {
+			value = parsed;
+		}
+	}
+
+	function handleKeyPress(e: KeyboardEvent) {
 		const isDot = e.key === '.';
-		const alreadyHasDot = e.currentTarget.innerText.includes('.');
+		const alreadyHasDot = String(value).includes('.');
 		const isNotNumber = isNaN(parseFloat(e.key)) && e.key !== '.';
 
 		if ((isDot && (intOnly || alreadyHasDot)) || isNotNumber) {
 			e.preventDefault();
 		}
 	}
-
-	function handleInput(e: Event & { currentTarget: EventTarget & HTMLSpanElement }) {
-		const parsed = parseFloat(e.currentTarget.innerText);
-		if (!isNaN(parsed)) {
-			value = parsed;
-		}
-	}
 </script>
 
-<span
+<input
 	class="nodrag number-input"
-	contenteditable="true"
-	role="textbox"
-	tabindex="0"
+	type="text"
+	inputmode="decimal"
+	{value}
 	style:max-width={maxWidth}
 	onkeypress={handleKeyPress}
-	oninput={handleInput}>{value}</span
->
+	oninput={handleInput}
+/>
 
 <style>
 	.number-input {
@@ -51,6 +51,7 @@
 		transition: border 0.2s ease;
 		font-size: 0.9rem;
 		font-weight: 400;
+		font-family: inherit;
 	}
 
 	.number-input:focus {

@@ -12,8 +12,8 @@
 
 	const { updateNodeData } = useSvelteFlow();
 
-	function handleTextChange(e: Event & { currentTarget: HTMLSpanElement }) {
-		updateNodeData(id, { text: e.currentTarget.innerText });
+	function handleTextChange(e: Event & { currentTarget: HTMLInputElement }) {
+		updateNodeData(id, { text: e.currentTarget.value });
 	}
 </script>
 
@@ -26,8 +26,6 @@
 >
 	<div class="input-container">
 		<span>Text:</span>
-		<span class="nodrag" contenteditable="true" role="textbox" oninput={handleTextChange}
-			>{data.text ?? 'Hello World!'}</span
-		>
+		<input class="nodrag" type="text" value={data.text ?? 'Hello World!'} oninput={handleTextChange} />
 	</div>
 </BaseNode>
