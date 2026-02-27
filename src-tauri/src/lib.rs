@@ -8,13 +8,8 @@ struct EnigoState {
 
 #[tauri::command]
 fn simulate_type_text(state: tauri::State<EnigoState>, text: String) -> Result<(), String> {
-    println!("Typing text: {}", text);
     let mut enigo = state.enigo.lock().map_err(|e| e.to_string())?;
-    println!("Enigo: {:?}", enigo);
-    // enigo.text(&text).map_err(|e| e.to_string())
-    enigo.text(&text).unwrap();
-    println!("Text typed: {}", text);
-    Ok(())
+    enigo.text(&text).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
