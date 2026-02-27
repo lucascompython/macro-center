@@ -1,4 +1,4 @@
-# Auto Spammer
+# Macro Center
 
 A Crossplatform Visual Programming/Scripting App for keyboard and mouse macros
 
