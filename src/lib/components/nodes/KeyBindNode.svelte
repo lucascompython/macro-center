@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
-	import BaseNode from './BaseNode.svelte';
-	import type { KeyBindNodeData } from '$lib/types';
+	import { useSvelteFlow } from "@xyflow/svelte";
+	import BaseNode from "./BaseNode.svelte";
+	import type { KeyBindNodeData } from "$lib/types";
 
 	interface Props {
 		id: string;
@@ -13,30 +13,30 @@
 	const { updateNodeData } = useSvelteFlow();
 
 	let recording = $state(false);
-	let display = $state(data.shortcut ?? '');
+	let display = $state(data.shortcut ?? "");
 
-	const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta']);
+	const MODIFIER_KEYS = new Set(["Control", "Shift", "Alt", "Meta"]);
 
 	// map KeyboardEvent.key values to the accelerator format tauri expects
 	function keyToAccelerator(key: string): string {
 		const map: Record<string, string> = {
-			'Control': 'Ctrl',
-			'Meta': 'Super',
-			' ': 'Space',
-			'ArrowUp': 'Up',
-			'ArrowDown': 'Down',
-			'ArrowLeft': 'Left',
-			'ArrowRight': 'Right',
-			'Escape': 'Escape',
-			'Enter': 'Enter',
-			'Backspace': 'Backspace',
-			'Delete': 'Delete',
-			'Tab': 'Tab',
-			'Home': 'Home',
-			'End': 'End',
-			'PageUp': 'PageUp',
-			'PageDown': 'PageDown',
-			'Insert': 'Insert',
+			Control: "Ctrl",
+			Meta: "Super",
+			" ": "Space",
+			ArrowUp: "Up",
+			ArrowDown: "Down",
+			ArrowLeft: "Left",
+			ArrowRight: "Right",
+			Escape: "Escape",
+			Enter: "Enter",
+			Backspace: "Backspace",
+			Delete: "Delete",
+			Tab: "Tab",
+			Home: "Home",
+			End: "End",
+			PageUp: "PageUp",
+			PageDown: "PageDown",
+			Insert: "Insert",
 		};
 		if (map[key]) return map[key];
 		// F-keys
@@ -48,7 +48,7 @@
 
 	function startRecording() {
 		recording = true;
-		display = '...';
+		display = "...";
 	}
 
 	function stopRecording(shortcut: string) {
@@ -66,30 +66,30 @@
 		// if only a modifier was pressed, show it live but don't commit
 		if (MODIFIER_KEYS.has(e.key)) {
 			const parts: string[] = [];
-			if (e.ctrlKey) parts.push('Ctrl');
-			if (e.shiftKey) parts.push('Shift');
-			if (e.altKey) parts.push('Alt');
-			if (e.metaKey) parts.push('Super');
-			display = parts.join('+') + '+...';
+			if (e.ctrlKey) parts.push("Ctrl");
+			if (e.shiftKey) parts.push("Shift");
+			if (e.altKey) parts.push("Alt");
+			if (e.metaKey) parts.push("Super");
+			display = parts.join("+") + "+...";
 			return;
 		}
 
 		// non-modifier key pressed - build the full shortcut and commit
 		const parts: string[] = [];
-		if (e.ctrlKey) parts.push('Ctrl');
-		if (e.shiftKey) parts.push('Shift');
-		if (e.altKey) parts.push('Alt');
-		if (e.metaKey) parts.push('Super');
+		if (e.ctrlKey) parts.push("Ctrl");
+		if (e.shiftKey) parts.push("Shift");
+		if (e.altKey) parts.push("Alt");
+		if (e.metaKey) parts.push("Super");
 		parts.push(keyToAccelerator(e.key));
 
-		stopRecording(parts.join('+'));
+		stopRecording(parts.join("+"));
 	}
 
 	function handleBlur() {
 		if (recording) {
 			// cancelled - revert to previous value
 			recording = false;
-			display = data.shortcut ?? '';
+			display = data.shortcut ?? "";
 		}
 	}
 </script>
@@ -97,10 +97,10 @@
 <BaseNode
 	{id}
 	data={{
-		title: data.title ?? 'Key Bind',
-		subline: data.subline ?? 'Trigger macro with key combination',
+		title: data.title ?? "Key Bind",
+		subline: data.subline ?? "Trigger macro with key combination",
 		enableTarget: false,
-		enableSource: true
+		enableSource: true,
 	}}
 >
 	<div class="keybind-row">
@@ -114,7 +114,7 @@
 			{#if recording}
 				<span class="recording-dot"></span>
 			{/if}
-			<span class="keybind-label">{display || 'Click to record'}</span>
+			<span class="keybind-label">{display || "Click to record"}</span>
 		</button>
 	</div>
 </BaseNode>
@@ -134,7 +134,7 @@
 		border: 1px solid #555;
 		background: #3a3b3d;
 		color: #e0e0e0;
-		font-family: 'Fira Mono', monospace;
+		font-family: "Fira Mono", monospace;
 		font-size: 0.85rem;
 		cursor: pointer;
 		transition: all 0.2s ease;
@@ -159,22 +159,39 @@
 	}
 
 	@keyframes pulse-border {
-		0%, 100% { border-color: #e92a67; }
-		50% { border-color: #ff4d8a; }
+		0%,
+		100% {
+			border-color: #e92a67;
+		}
+		50% {
+			border-color: #ff4d8a;
+		}
 	}
 
 	.recording-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		background: #e92a67;
+		display: block;
+		flex: 0 0 6px !important;
+		width: 6px !important;
+		height: 6px !important;
+		min-width: 6px !important;
+		max-width: 6px !important;
+		min-height: 6px !important;
+		max-height: 6px !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		border-radius: 50% !important;
+		background: #e92a67 !important;
 		animation: blink 1s ease-in-out infinite;
-		flex-shrink: 0;
 	}
 
 	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.3; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.3;
+		}
 	}
 
 	.keybind-label {
