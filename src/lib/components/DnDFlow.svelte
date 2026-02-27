@@ -12,7 +12,7 @@
     type IsValidConnection,
   } from "@xyflow/svelte";
 
-  import "@xyflow/svelte/dist/style.css";
+
   import "./nodes/node-styles.css";
 
   import KeyBindNode from "./nodes/KeyBindNode.svelte";

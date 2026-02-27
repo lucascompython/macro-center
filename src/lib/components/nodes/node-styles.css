@@ -1,6 +1,7 @@
 /* Svelte Flow theme overrides - Dark theme matching auto-spammer */
 
 .svelte-flow {
+	touch-action: none;
 	--bg-color: rgb(17, 17, 17);
 	--text-color: rgb(243, 244, 246);
 	--node-border-radius: 10px;
