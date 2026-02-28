@@ -67,5 +67,6 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 
 ## TODO (mostly non urgent):
 
+- Add a tool to see cursor position in real time
 - Improve xtask dev to have windows support. Probably replace wild with mold, since for now, wild doesn't support windows
 - Make it so you can create nodes by clicking on the canvas or grabbing an edge and dropping it somewhere, not only from the sidebar.
