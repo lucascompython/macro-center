@@ -1,0 +1,15 @@
+[package]
+name = "libmacrocenter-python"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "macrocenter_python"
+crate-type = ["cdylib"]
+
+[features]
+rapidhash = ["libmacrocenter/rapidhash"]
+
+[dependencies]
+libmacrocenter = { path = "../libmacrocenter" }
+pyo3 = "0.28"

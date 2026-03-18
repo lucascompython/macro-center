@@ -1,0 +1,19 @@
+[package]
+name = "libmacrocenter-lua"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "macrocenter_lua"
+crate-type = ["cdylib"]
+
+[features]
+default = ["lua54"]
+lua54 = ["mlua/lua54"]
+luajit = ["mlua/luajit"]
+luau = ["mlua/luau"]
+rapidhash = ["libmacrocenter/rapidhash"]
+
+[dependencies]
+libmacrocenter = { path = "../libmacrocenter" }
+mlua = { version = "0.11", default-features = false, features = ["module"] }

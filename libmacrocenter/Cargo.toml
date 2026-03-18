@@ -1,0 +1,15 @@
+[package]
+name = "libmacrocenter"
+version = "0.1.0"
+edition = "2024"
+description = "Cross-platform library for input simulation and global hotkey management"
+authors = ["Lucas de Linhares <lucasdelinhares@gmail.com>"]
+
+[features]
+rapidhash = ["rapidhash/nightly", "rapidhash/unsafe", "rapidhash/rng"]
+
+[dependencies]
+enigo = { version = "0.6" }
+global-hotkey = "0.7"
+rapidhash = { version = "4", features = ["nightly", "unsafe", "rng"], optional = true }
+thiserror = "2"

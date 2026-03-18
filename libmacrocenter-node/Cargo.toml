@@ -1,0 +1,21 @@
+
+[package]
+authors = ["Lucas de Linhares <lucasdelinhares@gmail.com>"]
+edition = "2024"
+name = "libmacrocenter-node"
+version = "0.1.0"
+
+[lib]
+name = "macrocenter_node"
+crate-type = ["cdylib"]
+
+[features]
+rapidhash = ["libmacrocenter/rapidhash"]
+
+[dependencies]
+libmacrocenter = { path = "../libmacrocenter" }
+napi = "3"
+napi-derive = "3"
+
+[build-dependencies]
+napi-build = "2"
