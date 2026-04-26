@@ -65,6 +65,9 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - Fix the Keybind node to work with numpad keys
 - Fix the Keybind node to work with mouse buttons
 
+- Add proper logic nodes (if, loops, variables, etc.)
+- Add a way to reuse groups of nodes as submacros, this would allow users to create more complex macros by combining simpler ones, and also make it easier to organize and manage large macros.
+
 - Create C header
 - See about integrating boltffi
 - see why bun and deno don't really work
@@ -72,9 +75,10 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - publish packages to crates.io, pypi, npm and luarocks with proper CI
 - update rust example
 - add a cargo profile for the macrocenter app and another for the lib
-
 - Improve xtask
+
 - Make it so you can create nodes by clicking on the canvas or grabbing an edge and dropping it somewhere, not only from the sidebar.
+
 - Make it so you can select nodes and copy/paste them
 - Add a tool to see the mouse coordinates, to make it easier to create mouse move nodes
 - Add a tool to record user actions and convert them into macros, this would be a separate page/mode
