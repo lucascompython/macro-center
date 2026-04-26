@@ -68,6 +68,8 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - Add proper logic nodes (if, loops, variables, etc.)
 - Add a way to reuse groups of nodes as submacros, this would allow users to create more complex macros by combining simpler ones, and also make it easier to organize and manage large macros.
 
+- Add a Comment node for users to add notes and explanations to their macros, this would be especially useful for complex macros or for sharing macros with others.
+
 - Create C header
 - See about integrating boltffi
 - see why bun and deno don't really work
