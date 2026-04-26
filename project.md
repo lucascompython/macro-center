@@ -60,15 +60,14 @@ Macro Center is a cross-platform tauri application designed to simplify the crea
 
 I had previously worked on a similar project called Auto-Spammer, but never got far with it, it implemented some of nodes UI. I will use it as a reference for this project.
 
-## For the Future
+## TODO:
 
-- Page/mode to record user actions and convert them into macros.
-- Create libmacrocenter, a rust library that can be used to listen to global shortcuts and simulate mouse and keyboard events, so that other applications/languages can use it as a dependency.
-
-## TODO (mostly non urgent):
+- Fix the Keybind node to work with numpad keys
+- Fix the Keybind node to work with mouse buttons
 
 - Create C header
-- see why bun and deno dont really work
+- See about integrating boltffi
+- see why bun and deno don't really work
 - see why we need to sleep before typing text (atleast on x11 linux)
 - publish packages to crates.io, pypi, npm and luarocks with proper CI
 - update rust example
@@ -76,3 +75,7 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 
 - Improve xtask
 - Make it so you can create nodes by clicking on the canvas or grabbing an edge and dropping it somewhere, not only from the sidebar.
+- Make it so you can select nodes and copy/paste them
+- Add a tool to see the mouse coordinates, to make it easier to create mouse move nodes
+- Add a tool to record user actions and convert them into macros, this would be a separate page/mode
+- Add a way to export macros as standalone scripts that can be run without the Macro Center application, this would be useful for sharing macros with others who don't have the app installed. Either by compiling them to native executables or by creating a small lightweight headless runtime that can execute the macros without the need for the full application.
