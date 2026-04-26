@@ -109,7 +109,7 @@
       });
 
       if (filePath) {
-        await writeTextFile(filePath, JSON.stringify(flowData, null, 2));
+        await writeTextFile(filePath, JSON.stringify(flowData, null));
         console.log("Macro saved to:", filePath);
       }
     } catch (error) {
