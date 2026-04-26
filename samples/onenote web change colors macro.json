@@ -1,0 +1,578 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "position": {
+        "x": 50,
+        "y": 200
+      },
+      "type": "keyBindNode",
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro with key combination",
+        "shortcut": "Ctrl+1"
+      },
+      "measured": {
+        "width": 330,
+        "height": 124
+      },
+      "selected": false
+    },
+    {
+      "id": "03935a08-6166-4803-8681-a871963a9522",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 665.5872247283265,
+        "y": 302.9105612788577
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 225,
+        "y": 175
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "type": "mousePressNode",
+      "position": {
+        "x": 990.5122195890693,
+        "y": 320.40262875099063
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "type": "delayNode",
+      "position": {
+        "x": 1302.9470971949333,
+        "y": 264.9267211477828
+      },
+      "data": {
+        "title": "Delay",
+        "delay": 50
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 246,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1597.834970622567,
+        "y": 256.60721323701
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 325,
+        "y": 200
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "5c39798b-0853-4cae-b1cf-cd0da49bd12d",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1987.4760475817413,
+        "y": 260.3031706362956
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "0f19a54d-439c-4752-aaad-baccf0f504ad",
+      "type": "keyBindNode",
+      "position": {
+        "x": 151.20834514404666,
+        "y": 543.7541775606518
+      },
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro",
+        "shortcut": "Ctrl+2"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 206,
+        "height": 124
+      },
+      "selected": false
+    },
+    {
+      "id": "30e58625-e82c-4b66-b279-9cfca64dd995",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 551.2083451440467,
+        "y": 579.7541775606518
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 225,
+        "y": 175
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "ef0fad3b-a31e-437e-9657-fde53d3eadec",
+      "type": "mousePressNode",
+      "position": {
+        "x": 937.9644891882153,
+        "y": 588.4156443576119
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "e7cb4fab-6efb-4b86-b53f-fbd8d0fcbe24",
+      "type": "delayNode",
+      "position": {
+        "x": 1282.3560538999404,
+        "y": 583.1376127145203
+      },
+      "data": {
+        "title": "Delay",
+        "delay": 50
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 246,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "147e7d29-92cc-47da-8fea-64806895b55a",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1593.7599208423433,
+        "y": 580.4985968929745
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 375,
+        "y": 200
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "63f4beb3-0b7f-485d-b1d5-952020ec17d5",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1977.7367228772553,
+        "y": 589.7351522683848
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "681b00cd-9718-49cb-b00b-bf47dffcff49",
+      "type": "keyBindNode",
+      "position": {
+        "x": 132.45553390358236,
+        "y": 883.290928469053
+      },
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro",
+        "shortcut": "Ctrl+3"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 206,
+        "height": 124
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "83a8c644-b4fe-4713-8255-3e637bb4e6a0",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 524.448636630279,
+        "y": 891.1658570157009
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 225,
+        "y": 175
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "443d933d-8932-434c-8dff-bf61df1faa0e",
+      "type": "mousePressNode",
+      "position": {
+        "x": 918.9815019513738,
+        "y": 891.1658570157009
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "088642f4-b13b-4998-9947-306c94d0327d",
+      "type": "delayNode",
+      "position": {
+        "x": 1316.1533830940148,
+        "y": 885.8878253726093
+      },
+      "data": {
+        "title": "Delay",
+        "delay": 50
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 246,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "572397a3-6959-4e5d-83f4-ba026529aa55",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1649.988884519557,
+        "y": 864.775698800243
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 415,
+        "y": 200
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "3cb343cc-eb48-42aa-a0d2-a7c42a4114c0",
+      "type": "mousePressNode",
+      "position": {
+        "x": 2046.355715595284,
+        "y": 865.6847431105401
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "65214c6d-0a3c-4d31-b667-ad5158304ddf",
+      "type": "keyBindNode",
+      "position": {
+        "x": 105.381749535881,
+        "y": 1108.6691631295525
+      },
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro",
+        "shortcut": "Ctrl+4"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 206,
+        "height": 124
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "01b248ff-b309-465b-8c09-ec08c8de5310",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 460.56637936069967,
+        "y": 1120.8568710156985
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 225,
+        "y": 175
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "efde81fb-622c-4845-9509-534f4753d25c",
+      "type": "mousePressNode",
+      "position": {
+        "x": 875.5566489427085,
+        "y": 1119.477189673983
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "f335c10d-b887-4fe5-ba51-562bb8ed4f1b",
+      "type": "delayNode",
+      "position": {
+        "x": 1244.5566489427085,
+        "y": 1113.477189673983
+      },
+      "data": {
+        "title": "Delay",
+        "delay": 50
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 246,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "10f4eee0-609d-449d-b2c0-a90b2b68826c",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1605.5566489427083,
+        "y": 1115.477189673983
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 450,
+        "y": 200
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 253,
+        "height": 179
+      },
+      "selected": false
+    },
+    {
+      "id": "1066513c-80ea-4744-9565-a6d98cff2529",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1979.556648942708,
+        "y": 1069.477189673983
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [0.5, 0.5],
+      "measured": {
+        "width": 288,
+        "height": 152
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "1",
+      "target": "03935a08-6166-4803-8681-a871963a9522",
+      "id": "xy-edge__1-03935a08-6166-4803-8681-a871963a9522",
+      "selected": false
+    },
+    {
+      "source": "03935a08-6166-4803-8681-a871963a9522",
+      "target": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "id": "xy-edge__03935a08-6166-4803-8681-a871963a9522-5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "selected": false
+    },
+    {
+      "source": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "target": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "id": "xy-edge__5dc80a5d-c768-4dea-8cfd-a4262544449d-ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "selected": false
+    },
+    {
+      "source": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "target": "558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "id": "xy-edge__ef0bac37-c202-4880-8915-5acc42b7ac9e-558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "selected": false
+    },
+    {
+      "source": "558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "target": "5c39798b-0853-4cae-b1cf-cd0da49bd12d",
+      "id": "xy-edge__558be825-b5de-40f3-ad27-bcad1ebefa01-5c39798b-0853-4cae-b1cf-cd0da49bd12d",
+      "selected": false
+    },
+    {
+      "source": "0f19a54d-439c-4752-aaad-baccf0f504ad",
+      "target": "30e58625-e82c-4b66-b279-9cfca64dd995",
+      "id": "xy-edge__0f19a54d-439c-4752-aaad-baccf0f504ad-30e58625-e82c-4b66-b279-9cfca64dd995"
+    },
+    {
+      "source": "30e58625-e82c-4b66-b279-9cfca64dd995",
+      "target": "ef0fad3b-a31e-437e-9657-fde53d3eadec",
+      "id": "xy-edge__30e58625-e82c-4b66-b279-9cfca64dd995-ef0fad3b-a31e-437e-9657-fde53d3eadec"
+    },
+    {
+      "source": "ef0fad3b-a31e-437e-9657-fde53d3eadec",
+      "target": "e7cb4fab-6efb-4b86-b53f-fbd8d0fcbe24",
+      "id": "xy-edge__ef0fad3b-a31e-437e-9657-fde53d3eadec-e7cb4fab-6efb-4b86-b53f-fbd8d0fcbe24"
+    },
+    {
+      "source": "e7cb4fab-6efb-4b86-b53f-fbd8d0fcbe24",
+      "target": "147e7d29-92cc-47da-8fea-64806895b55a",
+      "id": "xy-edge__e7cb4fab-6efb-4b86-b53f-fbd8d0fcbe24-147e7d29-92cc-47da-8fea-64806895b55a"
+    },
+    {
+      "source": "147e7d29-92cc-47da-8fea-64806895b55a",
+      "target": "63f4beb3-0b7f-485d-b1d5-952020ec17d5",
+      "id": "xy-edge__147e7d29-92cc-47da-8fea-64806895b55a-63f4beb3-0b7f-485d-b1d5-952020ec17d5"
+    },
+    {
+      "source": "681b00cd-9718-49cb-b00b-bf47dffcff49",
+      "target": "83a8c644-b4fe-4713-8255-3e637bb4e6a0",
+      "id": "xy-edge__681b00cd-9718-49cb-b00b-bf47dffcff49-83a8c644-b4fe-4713-8255-3e637bb4e6a0"
+    },
+    {
+      "source": "83a8c644-b4fe-4713-8255-3e637bb4e6a0",
+      "target": "443d933d-8932-434c-8dff-bf61df1faa0e",
+      "id": "xy-edge__83a8c644-b4fe-4713-8255-3e637bb4e6a0-443d933d-8932-434c-8dff-bf61df1faa0e"
+    },
+    {
+      "source": "443d933d-8932-434c-8dff-bf61df1faa0e",
+      "target": "088642f4-b13b-4998-9947-306c94d0327d",
+      "id": "xy-edge__443d933d-8932-434c-8dff-bf61df1faa0e-088642f4-b13b-4998-9947-306c94d0327d"
+    },
+    {
+      "source": "088642f4-b13b-4998-9947-306c94d0327d",
+      "target": "572397a3-6959-4e5d-83f4-ba026529aa55",
+      "id": "xy-edge__088642f4-b13b-4998-9947-306c94d0327d-572397a3-6959-4e5d-83f4-ba026529aa55"
+    },
+    {
+      "source": "572397a3-6959-4e5d-83f4-ba026529aa55",
+      "target": "3cb343cc-eb48-42aa-a0d2-a7c42a4114c0",
+      "id": "xy-edge__572397a3-6959-4e5d-83f4-ba026529aa55-3cb343cc-eb48-42aa-a0d2-a7c42a4114c0"
+    },
+    {
+      "source": "01b248ff-b309-465b-8c09-ec08c8de5310",
+      "target": "efde81fb-622c-4845-9509-534f4753d25c",
+      "id": "xy-edge__01b248ff-b309-465b-8c09-ec08c8de5310-efde81fb-622c-4845-9509-534f4753d25c"
+    },
+    {
+      "source": "efde81fb-622c-4845-9509-534f4753d25c",
+      "target": "f335c10d-b887-4fe5-ba51-562bb8ed4f1b",
+      "id": "xy-edge__efde81fb-622c-4845-9509-534f4753d25c-f335c10d-b887-4fe5-ba51-562bb8ed4f1b"
+    },
+    {
+      "source": "10f4eee0-609d-449d-b2c0-a90b2b68826c",
+      "target": "1066513c-80ea-4744-9565-a6d98cff2529",
+      "id": "xy-edge__10f4eee0-609d-449d-b2c0-a90b2b68826c-1066513c-80ea-4744-9565-a6d98cff2529"
+    },
+    {
+      "source": "f335c10d-b887-4fe5-ba51-562bb8ed4f1b",
+      "target": "10f4eee0-609d-449d-b2c0-a90b2b68826c",
+      "id": "xy-edge__f335c10d-b887-4fe5-ba51-562bb8ed4f1b-10f4eee0-609d-449d-b2c0-a90b2b68826c"
+    },
+    {
+      "source": "65214c6d-0a3c-4d31-b667-ad5158304ddf",
+      "target": "01b248ff-b309-465b-8c09-ec08c8de5310",
+      "id": "xy-edge__65214c6d-0a3c-4d31-b667-ad5158304ddf-01b248ff-b309-465b-8c09-ec08c8de5310"
+    }
+  ],
+  "viewport": {
+    "x": 68.06115824293911,
+    "y": -111.69151295124311,
+    "zoom": 0.5743491774985177
+  }
+}
