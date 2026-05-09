@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { Handle, Position, useSvelteFlow, useConnection } from '@xyflow/svelte';
 	import SettingsIcon from '$lib/components/icons/SettingsIcon.svelte';
+	import ConditionEditor from '$lib/components/ConditionEditor.svelte';
+	import { defaultConditionExpression } from '$lib/logic';
+	import { FLOW_IN_HANDLE, valueHandle } from '$lib/graph';
 	import type { ConditionalNodeData } from '$lib/types';
 
 	interface Props {
@@ -25,8 +28,8 @@
 			connectionState.startHandle?.type === 'source'
 	);
 
-	function handleConditionChange(e: Event & { currentTarget: HTMLInputElement }) {
-		updateNodeData(id, { condition: e.currentTarget.value });
+	function handleConditionChange(conditionExpression: NonNullable<ConditionalNodeData['conditionExpression']>) {
+		updateNodeData(id, { conditionExpression });
 	}
 
 	function handleSettingsClick() {
@@ -50,10 +53,11 @@
 				</div>
 			</div>
 			<div class="content">
-				<div class="input-container">
-					<span>Condition:</span>
-					<input class="nodrag" type="text" value={data.condition ?? 'value > 0'} oninput={handleConditionChange} />
-				</div>
+				<ConditionEditor
+					nodeId={id}
+					expression={data.conditionExpression ?? defaultConditionExpression}
+					onChange={handleConditionChange}
+				/>
 
 				<div class="outputs">
 					<div class="output-label true-label">True</div>
@@ -67,7 +71,29 @@
 	<Handle
 		type="target"
 		position={Position.Left}
+		id={FLOW_IN_HANDLE}
 		style="border-color: {isTarget ? '#e92a67' : ''}"
+	/>
+
+	<Handle
+		type="target"
+		position={Position.Top}
+		id={valueHandle('condition')}
+		style="left: 25%; border-color: #38d0ff; background: #102a36"
+	/>
+
+	<Handle
+		type="target"
+		position={Position.Top}
+		id={valueHandle('left')}
+		style="left: 50%; border-color: #38d0ff; background: #102a36"
+	/>
+
+	<Handle
+		type="target"
+		position={Position.Top}
+		id={valueHandle('right')}
+		style="left: 75%; border-color: #38d0ff; background: #102a36"
 	/>
 
 	<!-- True output handle (right top) -->

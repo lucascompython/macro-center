@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
+	import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
+	import ValueBackedInput from '$lib/components/ValueBackedInput.svelte';
+	import { valueHandle } from '$lib/graph';
 	import type { TypeNodeData } from '$lib/types';
 
 	interface Props {
@@ -12,8 +14,8 @@
 
 	const { updateNodeData } = useSvelteFlow();
 
-	function handleTextChange(e: Event & { currentTarget: HTMLInputElement }) {
-		updateNodeData(id, { text: e.currentTarget.value });
+	function handleTextChange(value: string) {
+		updateNodeData(id, { text: value });
 	}
 </script>
 
@@ -26,6 +28,18 @@
 >
 	<div class="input-container">
 		<span>Text:</span>
-		<input class="nodrag" type="text" value={data.text ?? 'Hello World!'} oninput={handleTextChange} />
+		<ValueBackedInput
+			nodeId={id}
+			inputName="text"
+			value={data.text ?? 'Hello World!'}
+			onInput={handleTextChange}
+		/>
 	</div>
 </BaseNode>
+
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('text')}
+	style="left: 50%; border-color: #38d0ff; background: #102a36"
+/>

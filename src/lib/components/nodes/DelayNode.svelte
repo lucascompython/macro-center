@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
+	import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
-	import NumberInput from '$lib/components/NumberInput.svelte';
+	import ValueBackedInput from '$lib/components/ValueBackedInput.svelte';
+	import { valueHandle } from '$lib/graph';
 	import type { DelayNodeData } from '$lib/types';
 
 	interface Props {
@@ -13,11 +14,9 @@
 
 	const { updateNodeData } = useSvelteFlow();
 
-	let delay = $state(data.delay ?? 1000);
-
-	$effect(() => {
-		updateNodeData(id, { delay });
-	});
+	function handleDelayInput(value: string) {
+		updateNodeData(id, { delay: Number(value) || 0 });
+	}
 </script>
 
 <BaseNode
@@ -29,6 +28,19 @@
 >
 	<div class="input-container">
 		<span>Delay (ms):</span>
-		<NumberInput bind:value={delay} intOnly={true} maxWidth="100px" />
+		<ValueBackedInput
+			nodeId={id}
+			inputName="delay"
+			inputmode="numeric"
+			value={data.delay ?? 1000}
+			onInput={handleDelayInput}
+		/>
 	</div>
 </BaseNode>
+
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('delay')}
+	style="left: 50%; border-color: #38d0ff; background: #102a36"
+/>

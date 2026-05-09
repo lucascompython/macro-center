@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ActionMode, CoordinateMode, Axis, MouseButton } from "$lib/types";
+	import { defaultConditionExpression } from "$lib/logic";
 
 	function onDragStart(event: DragEvent, nodeType: string, data: any = {}) {
 		if (!event.dataTransfer) return;
@@ -109,11 +110,129 @@
 			draggable="true"
 			ondragstart={(event) =>
 				onDragStart(event, "conditionalNode", {
-					title: "Conditional",
+					title: "If",
 					condition: "true",
+					conditionExpression: defaultConditionExpression,
 				})}
 		>
-			Conditional
+			If
+		</button>
+		<button
+			class="dndnode logic"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "repeatLoopNode", {
+					title: "Repeat",
+					iterations: 3,
+					indexVariable: "index",
+				})}
+		>
+			Repeat
+		</button>
+		<button
+			class="dndnode logic"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "forEachLoopNode", {
+					title: "For Each",
+					items: [],
+					itemVariable: "item",
+					indexVariable: "index",
+				})}
+		>
+			For Each
+		</button>
+		<button
+			class="dndnode logic"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "whileLoopNode", {
+					title: "While",
+					conditionExpression: defaultConditionExpression,
+					indexVariable: "index",
+					maxIterations: 100,
+				})}
+		>
+			While
+		</button>
+		<button
+			class="dndnode logic"
+			draggable="true"
+			ondragstart={(event) => onDragStart(event, "breakLoopNode", { title: "Break" })}
+		>
+			Break
+		</button>
+		<button
+			class="dndnode logic"
+			draggable="true"
+			ondragstart={(event) => onDragStart(event, "continueLoopNode", { title: "Continue" })}
+		>
+			Continue
+		</button>
+	</div>
+
+	<div class="category">
+		<h3>Variables</h3>
+		<button
+			class="dndnode variable"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "valueNode", {
+					title: "Value",
+					valueType: "text",
+					value: "",
+				})}
+		>
+			Value
+		</button>
+		<button
+			class="dndnode variable"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "setVariableNode", {
+					title: "Set Variable",
+					variableName: "value",
+					valueType: "number",
+					value: 0,
+					scope: "macro",
+				})}
+		>
+			Set Variable
+		</button>
+		<button
+			class="dndnode variable"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "getVariableNode", {
+					title: "Get Variable",
+					variableName: "value",
+				})}
+		>
+			Get Variable
+		</button>
+		<button
+			class="dndnode variable"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "updateVariableNode", {
+					title: "Update Variable",
+					variableName: "value",
+					operation: "increment",
+					value: 1,
+				})}
+		>
+			Update Variable
+		</button>
+		<button
+			class="dndnode variable"
+			draggable="true"
+			ondragstart={(event) =>
+				onDragStart(event, "compareNode", {
+					title: "Compare",
+					conditionExpression: defaultConditionExpression,
+				})}
+		>
+			Compare
 		</button>
 	</div>
 </aside>
@@ -205,5 +324,10 @@
 	.dndnode.logic::before {
 		background: #e92a67;
 		box-shadow: 0 0 8px rgba(233, 42, 103, 0.4);
+	}
+
+	.dndnode.variable::before {
+		background: #38d0ff;
+		box-shadow: 0 0 8px rgba(56, 208, 255, 0.4);
 	}
 </style>

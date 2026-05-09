@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
+	import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
-	import NumberInput from '$lib/components/NumberInput.svelte';
+	import ValueBackedInput from '$lib/components/ValueBackedInput.svelte';
+	import { valueHandle } from '$lib/graph';
 	import { Axis, type ScrollMouseNodeData } from '$lib/types';
 
 	interface Props {
@@ -17,11 +18,9 @@
 		updateNodeData(id, { axis: e.currentTarget.value as Axis });
 	}
 
-	let amount = $state(data.amount ?? 3);
-
-	$effect(() => {
-		updateNodeData(id, { amount });
-	});
+	function handleAmountInput(value: string) {
+		updateNodeData(id, { amount: Number(value) || 0 });
+	}
 </script>
 
 <BaseNode
@@ -41,6 +40,19 @@
 
 	<div class="input-container">
 		<span>Amount:</span>
-		<NumberInput bind:value={amount} intOnly={true} maxWidth="80px" />
+		<ValueBackedInput
+			nodeId={id}
+			inputName="amount"
+			inputmode="numeric"
+			value={data.amount ?? 3}
+			onInput={handleAmountInput}
+		/>
 	</div>
 </BaseNode>
+
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('amount')}
+	style="left: 50%; border-color: #38d0ff; background: #102a36"
+/>

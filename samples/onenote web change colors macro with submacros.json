@@ -1,0 +1,898 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "position": {
+        "x": 50,
+        "y": 200
+      },
+      "type": "keyBindNode",
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro with key combination",
+        "shortcut": "Ctrl+1"
+      },
+      "measured": {
+        "width": 330,
+        "height": 124
+      },
+      "selected": false
+    },
+    {
+      "id": "558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 940.977698059479,
+        "y": 261.7852554194607
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 325,
+        "y": 200
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 248,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "5c39798b-0853-4cae-b1cf-cd0da49bd12d",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1330.6187750186537,
+        "y": 265.4812128187463
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 282,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "0f19a54d-439c-4752-aaad-baccf0f504ad",
+      "type": "keyBindNode",
+      "position": {
+        "x": 151.20834514404666,
+        "y": 543.7541775606518
+      },
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro",
+        "shortcut": "Ctrl+2"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 202,
+        "height": 124
+      },
+      "selected": false
+    },
+    {
+      "id": "147e7d29-92cc-47da-8fea-64806895b55a",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1023.9577046088679,
+        "y": 582.194436822241
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 375,
+        "y": 200
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 248,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "63f4beb3-0b7f-485d-b1d5-952020ec17d5",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1407.93450664378,
+        "y": 591.4309921976512
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 282,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "681b00cd-9718-49cb-b00b-bf47dffcff49",
+      "type": "keyBindNode",
+      "position": {
+        "x": 132.45553390358236,
+        "y": 883.290928469053
+      },
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro",
+        "shortcut": "Ctrl+3"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 202,
+        "height": 124
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "572397a3-6959-4e5d-83f4-ba026529aa55",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1080.1866682860814,
+        "y": 866.4715387295093
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 415,
+        "y": 200
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 248,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "3cb343cc-eb48-42aa-a0d2-a7c42a4114c0",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1476.5534993618085,
+        "y": 867.3805830398064
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 282,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "65214c6d-0a3c-4d31-b667-ad5158304ddf",
+      "type": "keyBindNode",
+      "position": {
+        "x": 105.381749535881,
+        "y": 1108.6691631295525
+      },
+      "data": {
+        "title": "Key Bind",
+        "subline": "Trigger macro",
+        "shortcut": "Ctrl+4"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 202,
+        "height": 124
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "10f4eee0-609d-449d-b2c0-a90b2b68826c",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 1035.7544327092328,
+        "y": 1117.1730296032495
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 450,
+        "y": 200
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 248,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "1066513c-80ea-4744-9565-a6d98cff2529",
+      "type": "mousePressNode",
+      "position": {
+        "x": 1409.7544327092328,
+        "y": 1071.1730296032495
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 282,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "bb3d4da3-3815-44f7-bdfc-78cd5e3dc7ce",
+      "type": "subflowGroupNode",
+      "position": {
+        "x": 94.7799877650761,
+        "y": -432.0890041829993
+      },
+      "data": {
+        "title": "Go to top bar",
+        "subline": "Visible subflow definition",
+        "kind": "subflow",
+        "definitionId": "22256ef0-65be-42f7-ad1a-d2372ac3ed49"
+      },
+      "style": "width: 1054.3598724666067px; height: 360.9838401310749px;",
+      "selectable": true,
+      "measured": {
+        "width": 1143,
+        "height": 469
+      },
+      "selected": false,
+      "dragging": false,
+      "width": 1143,
+      "height": 469
+    },
+    {
+      "id": "03935a08-6166-4803-8681-a871963a9522",
+      "type": "mouseMoveNode",
+      "position": {
+        "x": 187.78269425190314,
+        "y": 351.3238361035336
+      },
+      "data": {
+        "title": "Move Mouse",
+        "x": 225,
+        "y": 175
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 248,
+        "height": 179
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "bb3d4da3-3815-44f7-bdfc-78cd5e3dc7ce",
+      "extent": "parent"
+    },
+    {
+      "id": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "type": "mousePressNode",
+      "position": {
+        "x": 528.4398666908522,
+        "y": 350.76684487773406
+      },
+      "data": {
+        "title": "Mouse Click",
+        "button": "left"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 282,
+        "height": 152
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "bb3d4da3-3815-44f7-bdfc-78cd5e3dc7ce",
+      "extent": "parent"
+    },
+    {
+      "id": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "type": "delayNode",
+      "position": {
+        "x": 906.1984398829036,
+        "y": 357.624495492972
+      },
+      "data": {
+        "title": "Delay",
+        "delay": 50
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "measured": {
+        "width": 321,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "bb3d4da3-3815-44f7-bdfc-78cd5e3dc7ce",
+      "extent": "parent"
+    },
+    {
+      "id": "4944b8f8-0a2c-405e-aa65-4becca6f4554",
+      "type": "submacroNode",
+      "position": {
+        "x": 466.32229514158587,
+        "y": 196.44145157344957
+      },
+      "data": {
+        "title": "Go to top bar",
+        "subline": "Call visible subflow",
+        "definitionId": "22256ef0-65be-42f7-ad1a-d2372ac3ed49",
+        "triggerOutputs": [
+          {
+            "id": "done",
+            "label": "Done"
+          }
+        ],
+        "valueInputs": [],
+        "valueOutputs": []
+      },
+      "measured": {
+        "width": 271,
+        "height": 129
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "eaea1aa8-032a-414e-89de-4a71c1c0c19f",
+      "type": "getVariableNode",
+      "position": {
+        "x": 175.6788421311477,
+        "y": 112.48420606794758
+      },
+      "data": {
+        "title": "Get Variable",
+        "variableName": "top_bar_x"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "parentId": "bb3d4da3-3815-44f7-bdfc-78cd5e3dc7ce",
+      "extent": "parent",
+      "measured": {
+        "width": 268,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "efee8b24-3402-49cd-8487-22fca4f09112",
+      "type": "getVariableNode",
+      "position": {
+        "x": 555.37351075795,
+        "y": 106.79589642559847
+      },
+      "data": {
+        "title": "Get Variable",
+        "variableName": "top_bar_y"
+      },
+      "origin": [
+        0.5,
+        0.5
+      ],
+      "parentId": "bb3d4da3-3815-44f7-bdfc-78cd5e3dc7ce",
+      "extent": "parent",
+      "measured": {
+        "width": 268,
+        "height": 114
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "f82ca0d2-bff5-42a6-b294-3b1ebf9eb43b",
+      "type": "submacroNode",
+      "position": {
+        "x": 478.8112359998074,
+        "y": 794.7847088885451
+      },
+      "data": {
+        "title": "Go to top bar",
+        "subline": "Call visible subflow",
+        "definitionId": "22256ef0-65be-42f7-ad1a-d2372ac3ed49",
+        "triggerOutputs": [
+          {
+            "id": "done",
+            "label": "Done"
+          }
+        ],
+        "valueInputs": [],
+        "valueOutputs": []
+      },
+      "measured": {
+        "width": 271,
+        "height": 129
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "ec39451e-cec3-4a6d-b2db-2d5e9b9988a3",
+      "type": "submacroNode",
+      "position": {
+        "x": 421.40862939037834,
+        "y": 488.9926074863917
+      },
+      "data": {
+        "title": "Go to top bar",
+        "subline": "Call visible subflow",
+        "definitionId": "22256ef0-65be-42f7-ad1a-d2372ac3ed49",
+        "triggerOutputs": [
+          {
+            "id": "done",
+            "label": "Done"
+          }
+        ],
+        "valueInputs": [],
+        "valueOutputs": []
+      },
+      "measured": {
+        "width": 271,
+        "height": 129
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "a72748b5-63c9-423a-9e36-96c8a48285a8",
+      "type": "submacroNode",
+      "position": {
+        "x": 443.25930073512563,
+        "y": 1093.4209651118726
+      },
+      "data": {
+        "title": "Go to top bar",
+        "subline": "Call visible subflow",
+        "definitionId": "22256ef0-65be-42f7-ad1a-d2372ac3ed49",
+        "triggerOutputs": [
+          {
+            "id": "done",
+            "label": "Done"
+          }
+        ],
+        "valueInputs": [],
+        "valueOutputs": []
+      },
+      "measured": {
+        "width": 271,
+        "height": 129
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "target": "5c39798b-0853-4cae-b1cf-cd0da49bd12d",
+      "id": "xy-edge__558be825-b5de-40f3-ad27-bcad1ebefa01-5c39798b-0853-4cae-b1cf-cd0da49bd12d",
+      "selected": false
+    },
+    {
+      "source": "147e7d29-92cc-47da-8fea-64806895b55a",
+      "target": "63f4beb3-0b7f-485d-b1d5-952020ec17d5",
+      "id": "xy-edge__147e7d29-92cc-47da-8fea-64806895b55a-63f4beb3-0b7f-485d-b1d5-952020ec17d5",
+      "selected": false
+    },
+    {
+      "source": "572397a3-6959-4e5d-83f4-ba026529aa55",
+      "target": "3cb343cc-eb48-42aa-a0d2-a7c42a4114c0",
+      "id": "xy-edge__572397a3-6959-4e5d-83f4-ba026529aa55-3cb343cc-eb48-42aa-a0d2-a7c42a4114c0",
+      "selected": false
+    },
+    {
+      "source": "10f4eee0-609d-449d-b2c0-a90b2b68826c",
+      "target": "1066513c-80ea-4744-9565-a6d98cff2529",
+      "id": "xy-edge__10f4eee0-609d-449d-b2c0-a90b2b68826c-1066513c-80ea-4744-9565-a6d98cff2529",
+      "selected": false
+    },
+    {
+      "source": "03935a08-6166-4803-8681-a871963a9522",
+      "target": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "id": "xy-edge__03935a08-6166-4803-8681-a871963a9522-5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "selected": false,
+      "data": {
+        "kind": "trigger"
+      }
+    },
+    {
+      "source": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+      "target": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "id": "xy-edge__5dc80a5d-c768-4dea-8cfd-a4262544449d-ef0bac37-c202-4880-8915-5acc42b7ac9e",
+      "selected": false,
+      "data": {
+        "kind": "trigger"
+      }
+    },
+    {
+      "source": "1",
+      "target": "4944b8f8-0a2c-405e-aa65-4becca6f4554",
+      "id": "e-1-out-4944b8f8-0a2c-405e-aa65-4becca6f4554-flow:in-bdb5dcc8-246e-4a2b-8085-9188d5b3e0e1",
+      "selected": false,
+      "targetHandle": "flow:in",
+      "data": {
+        "kind": "trigger"
+      }
+    },
+    {
+      "source": "4944b8f8-0a2c-405e-aa65-4becca6f4554",
+      "target": "558be825-b5de-40f3-ad27-bcad1ebefa01",
+      "id": "e-4944b8f8-0a2c-405e-aa65-4becca6f4554-out:done-558be825-b5de-40f3-ad27-bcad1ebefa01-in-5a0fe851-435e-4bb2-b7e0-f76edee429e0",
+      "selected": false,
+      "sourceHandle": "out:done",
+      "data": {
+        "kind": "trigger"
+      }
+    },
+    {
+      "source": "eaea1aa8-032a-414e-89de-4a71c1c0c19f",
+      "sourceHandle": "value:value",
+      "target": "03935a08-6166-4803-8681-a871963a9522",
+      "targetHandle": "value:x",
+      "id": "e-eaea1aa8-032a-414e-89de-4a71c1c0c19f-value:value-03935a08-6166-4803-8681-a871963a9522-value:x-933c063d-4a98-4eaf-8240-29d2746dbad2",
+      "type": "gradient",
+      "data": {
+        "kind": "value"
+      },
+      "animated": true
+    },
+    {
+      "source": "efee8b24-3402-49cd-8487-22fca4f09112",
+      "sourceHandle": "value:value",
+      "target": "03935a08-6166-4803-8681-a871963a9522",
+      "targetHandle": "value:y",
+      "id": "e-efee8b24-3402-49cd-8487-22fca4f09112-value:value-03935a08-6166-4803-8681-a871963a9522-value:y-84ee8cae-4fe5-400b-b0d7-ac92d717c38b",
+      "type": "gradient",
+      "data": {
+        "kind": "value"
+      },
+      "animated": true,
+      "selected": false
+    },
+    {
+      "source": "65214c6d-0a3c-4d31-b667-ad5158304ddf",
+      "sourceHandle": "flow:out",
+      "target": "a72748b5-63c9-423a-9e36-96c8a48285a8",
+      "targetHandle": "flow:in",
+      "id": "e-65214c6d-0a3c-4d31-b667-ad5158304ddf-flow:out-a72748b5-63c9-423a-9e36-96c8a48285a8-flow:in-2e868108-e30f-436c-8953-c1d502aaaf21",
+      "type": "gradient",
+      "data": {
+        "kind": "trigger"
+      },
+      "animated": false,
+      "selected": false
+    },
+    {
+      "source": "681b00cd-9718-49cb-b00b-bf47dffcff49",
+      "sourceHandle": "flow:out",
+      "target": "f82ca0d2-bff5-42a6-b294-3b1ebf9eb43b",
+      "targetHandle": "flow:in",
+      "id": "e-681b00cd-9718-49cb-b00b-bf47dffcff49-flow:out-f82ca0d2-bff5-42a6-b294-3b1ebf9eb43b-flow:in-a25007c8-1f7a-41d1-abca-5e820769e9e3",
+      "type": "gradient",
+      "data": {
+        "kind": "trigger"
+      },
+      "animated": false,
+      "selected": false
+    },
+    {
+      "source": "0f19a54d-439c-4752-aaad-baccf0f504ad",
+      "sourceHandle": "flow:out",
+      "target": "ec39451e-cec3-4a6d-b2db-2d5e9b9988a3",
+      "targetHandle": "flow:in",
+      "id": "e-0f19a54d-439c-4752-aaad-baccf0f504ad-flow:out-ec39451e-cec3-4a6d-b2db-2d5e9b9988a3-flow:in-b0804aaf-261e-4b38-bde3-4828d97f321d",
+      "type": "gradient",
+      "data": {
+        "kind": "trigger"
+      },
+      "animated": false,
+      "selected": false
+    },
+    {
+      "source": "ec39451e-cec3-4a6d-b2db-2d5e9b9988a3",
+      "sourceHandle": "out:done",
+      "target": "147e7d29-92cc-47da-8fea-64806895b55a",
+      "targetHandle": "flow:in",
+      "id": "e-ec39451e-cec3-4a6d-b2db-2d5e9b9988a3-out:done-147e7d29-92cc-47da-8fea-64806895b55a-flow:in-c9de770a-a9a5-4070-b3f1-d01cd494aa47",
+      "type": "gradient",
+      "data": {
+        "kind": "trigger"
+      },
+      "animated": false,
+      "selected": false
+    },
+    {
+      "source": "f82ca0d2-bff5-42a6-b294-3b1ebf9eb43b",
+      "sourceHandle": "out:done",
+      "target": "572397a3-6959-4e5d-83f4-ba026529aa55",
+      "targetHandle": "flow:in",
+      "id": "e-f82ca0d2-bff5-42a6-b294-3b1ebf9eb43b-out:done-572397a3-6959-4e5d-83f4-ba026529aa55-flow:in-1f6ffc53-7fb0-4f09-9e88-06a4bac33b8b",
+      "type": "gradient",
+      "data": {
+        "kind": "trigger"
+      },
+      "animated": false,
+      "selected": false
+    },
+    {
+      "source": "a72748b5-63c9-423a-9e36-96c8a48285a8",
+      "sourceHandle": "out:done",
+      "target": "10f4eee0-609d-449d-b2c0-a90b2b68826c",
+      "targetHandle": "flow:in",
+      "id": "e-a72748b5-63c9-423a-9e36-96c8a48285a8-out:done-10f4eee0-609d-449d-b2c0-a90b2b68826c-flow:in-a0b0593e-604a-4a97-91ca-3a2f3000d15d",
+      "type": "gradient",
+      "data": {
+        "kind": "trigger"
+      },
+      "animated": false,
+      "selected": false
+    }
+  ],
+  "variables": [
+    {
+      "id": "05698b99-a5dc-44bb-a796-54f78f2cd916",
+      "name": "top_bar_x",
+      "type": "number",
+      "defaultValue": 225,
+      "scope": "macro"
+    },
+    {
+      "id": "f90fbac4-b930-44c0-937b-eaa2912c0fbd",
+      "name": "top_bar_y",
+      "type": "number",
+      "defaultValue": 175,
+      "scope": "macro"
+    }
+  ],
+  "submacros": [
+    {
+      "id": "22256ef0-65be-42f7-ad1a-d2372ac3ed49",
+      "name": "Go to top bar",
+      "nodes": [
+        {
+          "id": "03935a08-6166-4803-8681-a871963a9522",
+          "type": "mouseMoveNode",
+          "position": {
+            "x": 187.78269425190314,
+            "y": 351.3238361035336
+          },
+          "data": {
+            "title": "Move Mouse",
+            "x": 225,
+            "y": 175
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "measured": {
+            "width": 248,
+            "height": 179
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+          "type": "mousePressNode",
+          "position": {
+            "x": 528.4398666908522,
+            "y": 350.76684487773406
+          },
+          "data": {
+            "title": "Mouse Click",
+            "button": "left"
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "measured": {
+            "width": 282,
+            "height": 152
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+          "type": "delayNode",
+          "position": {
+            "x": 906.1984398829036,
+            "y": 357.624495492972
+          },
+          "data": {
+            "title": "Delay",
+            "delay": 50
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "measured": {
+            "width": 321,
+            "height": 114
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "eaea1aa8-032a-414e-89de-4a71c1c0c19f",
+          "type": "getVariableNode",
+          "position": {
+            "x": 175.6788421311477,
+            "y": 112.48420606794758
+          },
+          "data": {
+            "title": "Get Variable",
+            "variableName": "top_bar_x"
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "measured": {
+            "width": 268,
+            "height": 114
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "efee8b24-3402-49cd-8487-22fca4f09112",
+          "type": "getVariableNode",
+          "position": {
+            "x": 555.37351075795,
+            "y": 106.79589642559847
+          },
+          "data": {
+            "title": "Get Variable",
+            "variableName": "top_bar_y"
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "measured": {
+            "width": 268,
+            "height": 114
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "03935a08-6166-4803-8681-a871963a9522",
+          "target": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+          "id": "xy-edge__03935a08-6166-4803-8681-a871963a9522-5dc80a5d-c768-4dea-8cfd-a4262544449d",
+          "selected": false,
+          "data": {
+            "kind": "trigger"
+          }
+        },
+        {
+          "source": "5dc80a5d-c768-4dea-8cfd-a4262544449d",
+          "target": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+          "id": "xy-edge__5dc80a5d-c768-4dea-8cfd-a4262544449d-ef0bac37-c202-4880-8915-5acc42b7ac9e",
+          "selected": false,
+          "data": {
+            "kind": "trigger"
+          }
+        },
+        {
+          "source": "eaea1aa8-032a-414e-89de-4a71c1c0c19f",
+          "sourceHandle": "value:value",
+          "target": "03935a08-6166-4803-8681-a871963a9522",
+          "targetHandle": "value:x",
+          "id": "e-eaea1aa8-032a-414e-89de-4a71c1c0c19f-value:value-03935a08-6166-4803-8681-a871963a9522-value:x-933c063d-4a98-4eaf-8240-29d2746dbad2",
+          "type": "gradient",
+          "data": {
+            "kind": "value"
+          },
+          "animated": true
+        },
+        {
+          "source": "efee8b24-3402-49cd-8487-22fca4f09112",
+          "sourceHandle": "value:value",
+          "target": "03935a08-6166-4803-8681-a871963a9522",
+          "targetHandle": "value:y",
+          "id": "e-efee8b24-3402-49cd-8487-22fca4f09112-value:value-03935a08-6166-4803-8681-a871963a9522-value:y-84ee8cae-4fe5-400b-b0d7-ac92d717c38b",
+          "type": "gradient",
+          "data": {
+            "kind": "value"
+          },
+          "animated": true,
+          "selected": false
+        }
+      ],
+      "variables": [],
+      "entryNodeIds": [
+        "03935a08-6166-4803-8681-a871963a9522"
+      ],
+      "triggerOutputs": [
+        {
+          "id": "done",
+          "label": "Done"
+        }
+      ],
+      "valueInputs": [],
+      "valueOutputs": [],
+      "boundaryValueInputs": [],
+      "valueOutputBindings": [],
+      "boundaryOutputs": [
+        {
+          "outputId": "done",
+          "sourceNodeId": "ef0bac37-c202-4880-8915-5acc42b7ac9e",
+          "sourceHandle": "flow:out"
+        }
+      ],
+      "createdAt": "2026-05-09T21:01:36.952Z",
+      "updatedAt": "2026-05-09T21:05:02.802Z"
+    }
+  ],
+  "viewport": {
+    "x": 341.53877065977053,
+    "y": 451.1105356326691,
+    "zoom": 0.5896782961306077
+  }
+}

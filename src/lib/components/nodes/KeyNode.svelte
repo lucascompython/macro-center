@@ -1,7 +1,11 @@
 <script lang="ts">
-	import { useSvelteFlow } from "@xyflow/svelte";
+	import { Handle, Position, useSvelteFlow, useStore } from "@xyflow/svelte";
+	import { getContext } from "svelte";
 	import BaseNode from "./BaseNode.svelte";
+	import { VALUE_SOURCE_CONTEXT, type ValueSourceContext } from "$lib/editor-context";
+	import { valueHandle } from "$lib/graph";
 	import { ActionMode, type KeyNodeData } from "$lib/types";
+	import { resolveConnectedValuePreview } from "$lib/value-sources";
 
 	interface Props {
 		id: string;
@@ -11,6 +15,15 @@
 	let { id, data }: Props = $props();
 
 	const { updateNodeData } = useSvelteFlow();
+	const store = useStore();
+	const valueSources = getContext<ValueSourceContext | undefined>(VALUE_SOURCE_CONTEXT);
+
+	const connectedKey = $derived.by(() =>
+		resolveConnectedValuePreview(store, id, "key", {
+			variables: valueSources?.getVariables() ?? [],
+			snapshot: valueSources?.getSnapshot() ?? {},
+		})
+	);
 
 	let recording = $state(false);
 
@@ -57,20 +70,30 @@
 	<div class="input-container key-container">
 		<span>Key:</span>
 
-		<button
-			class="nodrag keybind-btn"
-			class:recording
-			onkeydown={handleKeyDown}
-			onclick={startRecording}
-			onblur={handleBlur}
-		>
-			{#if recording}
-				<div class="recording-dot"></div>
-			{/if}
-			<span class="keybind-label"
-				>{recording ? "..." : data.key || "Click to record"}</span
+		{#if connectedKey}
+			<input
+				class="nodrag key-source"
+				type="text"
+				value={connectedKey.text}
+				readonly
+				title={connectedKey.title}
+			/>
+		{:else}
+			<button
+				class="nodrag keybind-btn"
+				class:recording
+				onkeydown={handleKeyDown}
+				onclick={startRecording}
+				onblur={handleBlur}
 			>
-		</button>
+				{#if recording}
+					<div class="recording-dot"></div>
+				{/if}
+				<span class="keybind-label"
+					>{recording ? "..." : data.key || "Click to record"}</span
+				>
+			</button>
+		{/if}
 	</div>
 
 	<div class="input-container">
@@ -86,6 +109,13 @@
 		</select>
 	</div>
 </BaseNode>
+
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('key')}
+	style="left: 50%; border-color: #38d0ff; background: #102a36"
+/>
 
 <style>
 	.key-container {
@@ -110,6 +140,21 @@
 		margin-left: 0.5rem;
 		min-width: 5rem;
 		max-width: 140px;
+	}
+
+	input.key-source {
+		background: rgba(233, 42, 103, 0.15);
+		border: 1px solid rgba(255, 138, 0, 0.48);
+		border-radius: 0.25rem;
+		color: #ffd7a6;
+		cursor: default;
+		font-family: inherit;
+		font-size: 0.85rem;
+		margin-left: 0.5rem;
+		max-width: 140px;
+		min-width: 5rem;
+		outline: none;
+		padding: 0.2rem 0.5rem;
 	}
 
 	.keybind-btn:hover {

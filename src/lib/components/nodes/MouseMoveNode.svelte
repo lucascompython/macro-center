@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
+	import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
-	import NumberInput from '$lib/components/NumberInput.svelte';
+	import ValueBackedInput from '$lib/components/ValueBackedInput.svelte';
+	import { valueHandle } from '$lib/graph';
 	import { CoordinateMode, type MouseMoveNodeData } from '$lib/types';
 
 	interface Props {
@@ -17,16 +18,9 @@
 		updateNodeData(id, { coordinateMode: e.currentTarget.value as CoordinateMode });
 	}
 
-	let x = $state(data.x ?? 0);
-	let y = $state(data.y ?? 0);
-
-	$effect(() => {
-		updateNodeData(id, { x });
-	});
-
-	$effect(() => {
-		updateNodeData(id, { y });
-	});
+	function handleCoordinateInput(field: 'x' | 'y', value: string) {
+		updateNodeData(id, { [field]: Number(value) || 0 });
+	}
 </script>
 
 <BaseNode
@@ -38,12 +32,24 @@
 >
 	<div class="input-container">
 		<span>X:</span>
-		<NumberInput bind:value={x} intOnly={true} maxWidth="80px" />
+		<ValueBackedInput
+			nodeId={id}
+			inputName="x"
+			inputmode="numeric"
+			value={data.x ?? 0}
+			onInput={(value) => handleCoordinateInput('x', value)}
+		/>
 	</div>
 
 	<div class="input-container">
 		<span>Y:</span>
-		<NumberInput bind:value={y} intOnly={true} maxWidth="80px" />
+		<ValueBackedInput
+			nodeId={id}
+			inputName="y"
+			inputmode="numeric"
+			value={data.y ?? 0}
+			onInput={(value) => handleCoordinateInput('y', value)}
+		/>
 	</div>
 
 	<div class="input-container">
@@ -58,3 +64,16 @@
 		</select>
 	</div>
 </BaseNode>
+
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('x')}
+	style="left: 35%; border-color: #38d0ff; background: #102a36"
+/>
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('y')}
+	style="left: 65%; border-color: #38d0ff; background: #102a36"
+/>

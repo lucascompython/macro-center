@@ -13,7 +13,13 @@
 	const { updateNodeData } = useSvelteFlow();
 
 	let recording = $state(false);
-	let display = $state(data.shortcut ?? "");
+	let display = $state("");
+
+	$effect(() => {
+		if (!recording) {
+			display = data.shortcut ?? "";
+		}
+	});
 
 	const MODIFIER_KEYS = new Set(["Control", "Shift", "Alt", "Meta"]);
 

@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { useSvelteFlow } from '@xyflow/svelte';
+	import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
+	import ValueBackedSelect from '$lib/components/ValueBackedSelect.svelte';
+	import { valueHandle } from '$lib/graph';
 	import { ActionMode, MouseButton, type MousePressNodeData } from '$lib/types';
 
 	interface Props {
@@ -11,9 +13,16 @@
 	let { id, data }: Props = $props();
 
 	const { updateNodeData } = useSvelteFlow();
+	const buttonOptions: { value: string; label: string }[] = [
+		{ value: MouseButton.LEFT, label: 'Left' },
+		{ value: MouseButton.RIGHT, label: 'Right' },
+		{ value: MouseButton.MIDDLE, label: 'Middle' },
+		{ value: MouseButton.MOUSE4, label: 'Mouse4' },
+		{ value: MouseButton.MOUSE5, label: 'Mouse5' }
+	];
 
-	function handleButtonChange(e: Event & { currentTarget: HTMLSelectElement }) {
-		updateNodeData(id, { button: e.currentTarget.value as MouseButton });
+	function handleButtonChange(value: string) {
+		updateNodeData(id, { button: value as MouseButton });
 	}
 
 	function handleModeChange(e: Event & { currentTarget: HTMLSelectElement }) {
@@ -30,13 +39,13 @@
 >
 	<div class="input-container">
 		<span>Button:</span>
-		<select class="nodrag" value={data.button ?? MouseButton.LEFT} onchange={handleButtonChange}>
-			<option value={MouseButton.LEFT}>Left</option>
-			<option value={MouseButton.RIGHT}>Right</option>
-			<option value={MouseButton.MIDDLE}>Middle</option>
-			<option value={MouseButton.MOUSE4}>Mouse4</option>
-			<option value={MouseButton.MOUSE5}>Mouse5</option>
-		</select>
+		<ValueBackedSelect
+			nodeId={id}
+			inputName="button"
+			value={data.button ?? MouseButton.LEFT}
+			options={buttonOptions}
+			onChange={handleButtonChange}
+		/>
 	</div>
 
 	<div class="input-container">
@@ -48,3 +57,10 @@
 		</select>
 	</div>
 </BaseNode>
+
+<Handle
+	type="target"
+	position={Position.Top}
+	id={valueHandle('button')}
+	style="left: 50%; border-color: #38d0ff; background: #102a36"
+/>

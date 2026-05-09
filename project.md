@@ -56,6 +56,104 @@ Macro Center is a cross-platform tauri application designed to simplify the crea
 
 - Macro Management: Users can save, load, and organize their macros within the application. (probably save them as json files)
 
+## Logic and Reusable Node Groups
+
+Macro Center supports real programming concepts without making the user write code. The logic system should feel like building a flowchart with small, readable blocks instead of wiring a pile of low-level nodes.
+
+### Graph model
+
+- Use two kinds of connections:
+  - Trigger flow connections: control the order of execution. These are the "do this, then this" links between action nodes.
+  - Value connections: pass data into node parameters. These are used for strings, numbers, booleans, coordinates, lists, etc.
+
+### Variables
+
+- a Variables panel where users can create, rename, inspect, and delete variables used by the current macro.
+- Variables should have simple types:
+  - boolean
+  - number
+  - text
+  - key
+  - mouse button
+  - point, with x and y
+  - list
+- Support a few scopes:
+  - Macro variables: shared across one macro run.
+  - Submacro local variables: private to a reusable node group.
+  - Persistent variables: optional saved values, useful for counters or user preferences between runs.
+- Node parameters can reference variables using readable chips, for example `message`, `click_count`, or `target_position`.
+- Useful variable nodes:
+  - Set Variable: assigns a value.
+  - Get Variable: outputs the current value.
+  - Update Variable: increments, decrements, appends text, toggles a boolean, etc.
+  - Clear Variable: resets a variable to its default value.
+- Show live previews while testing a macro, so the user can see the current value of each variable.
+
+### Conditions
+
+- an If node for normal branching.
+  - Inputs: trigger, condition
+  - Outputs: true trigger, false trigger
+  - Parameters: optional condition builder when no condition input is connected
+- The condition builder should be UI-first instead of raw text-first:
+  - left value: literal, variable, or value input
+  - operator: equals, not equals, greater than, contains, is pressed, exists, etc.
+  - right value: literal, variable, or value input when needed
+- a Switch node for multiple branches from one value, useful when a variable can have several known states.
+- small pure value nodes for reusable expressions:
+  - Compare
+  - And / Or / Not
+  - Math
+  - Text contains / starts with / ends with
+  - Mouse position
+  - Key state
+- Pure value nodes do not execute actions by themselves. They only calculate values when an execution node needs them.
+
+### Loops
+
+- loop nodes that keep common cases easy:
+  - Repeat N: runs a body a fixed number of times.
+  - While: runs while a condition is true.
+  - For Each: runs once for each item in a list.
+- A loop should create a visible loop frame/body on the canvas instead of requiring a messy edge that points backward.
+- Loop outputs:
+  - body trigger: runs the loop body.
+  - done trigger: continues after the loop is complete.
+  - break input: exits the loop early.
+  - continue input: skips to the next iteration.
+- Loop variables should be automatic:
+  - `index` for Repeat N and While.
+  - `item` and `index` for For Each.
+- Add a safety limit for While loops to prevent infinite loops, with a clear setting like "max iterations".
+
+### Visible Subflows and Submacro calls
+
+- Let users select a group of nodes and choose "Create Subflow".
+- A subflow is a visible, editable graph definition that stays on the canvas inside a labeled group.
+- A Submacro call node is a compact single node that runs one of those subflow definitions.
+- When creating a subflow, Macro Center should detect edges that cross the selection boundary and turn them into inputs and outputs on the call node.
+- Submacros should support:
+  - trigger inputs, like `run`
+  - trigger outputs, like `done`, `success`, or `failed`
+  - value inputs, like `text`, `delay_ms`, or `position`
+  - value outputs, like `result`, `count`, or `found`
+  - local variables that do not leak into the parent macro
+- The visible subflow should show its name and boundary ports, and its internal nodes should remain editable.
+- The visible subflow name should be editable directly from the group header, and renaming it should update all matching Submacro call nodes.
+- The compact Submacro call node should show its name, inputs, outputs, and the most important parameters.
+- Editing a visible subflow definition should update all places where it is used.
+- Support duplicating a submacro into a separate copy when the user wants to change one instance without changing the original.
+- Store submacros in a library/sidebar so users can reuse them across macros.
+- Prevent accidental recursion at first. A submacro should not be able to directly or indirectly call itself until there is a deliberate recursion design with safety limits.
+
+### Example workflow
+
+1. User creates a macro that clicks a button, waits, checks a condition, and retries up to 5 times.
+2. User selects those nodes and chooses "Create Subflow".
+3. Macro Center keeps those nodes visible inside a subflow named `Retry Click`.
+4. The subflow exposes value inputs like `position`, `attempts`, and `delay_ms`.
+5. The parent macro can call it with one `Retry Click` Submacro node instead of duplicating the node chain.
+
 ## For reference
 
 I had previously worked on a similar project called Auto-Spammer, but never got far with it, it implemented some of nodes UI. I will use it as a reference for this project.
@@ -64,9 +162,6 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 
 - Fix the Keybind node to work with numpad keys
 - Fix the Keybind node to work with mouse buttons
-
-- Add proper logic nodes (if, loops, variables, etc.)
-- Add a way to reuse groups of nodes as submacros, this would allow users to create more complex macros by combining simpler ones, and also make it easier to organize and manage large macros.
 
 - Add a Comment node for users to add notes and explanations to their macros, this would be especially useful for complex macros or for sharing macros with others.
 

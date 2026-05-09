@@ -34,6 +34,12 @@
 	box-shadow: var(--node-box-shadow);
 }
 
+.svelte-flow__node-subflowGroupNode {
+	box-shadow: none;
+	font-weight: 500;
+	min-width: 0;
+}
+
 .svelte-flow__node .wrapper {
 	overflow: hidden;
 	padding: 2px;

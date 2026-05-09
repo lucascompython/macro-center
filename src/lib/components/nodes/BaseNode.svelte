@@ -3,6 +3,7 @@
 	import SettingsIcon from '$lib/components/icons/SettingsIcon.svelte';
 	import type { Snippet } from 'svelte';
 	import type { BaseNodeData } from '$lib/types';
+	import { FLOW_IN_HANDLE, FLOW_OUT_HANDLE } from '$lib/graph';
 
 	interface Props {
 		id: string;
@@ -73,6 +74,7 @@
 		<Handle
 			type="target"
 			position={Position.Left}
+			id={FLOW_IN_HANDLE}
 			style="border-color: {isTarget ? '#e92a67' : ''}"
 		/>
 	{/if}
@@ -80,6 +82,7 @@
 		<Handle
 			type="source"
 			position={Position.Right}
+			id={FLOW_OUT_HANDLE}
 			style="border-color: {showSourceHighlight ? '#2a8af6' : ''}"
 		/>
 	{/if}
