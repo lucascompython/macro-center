@@ -21,7 +21,9 @@ fn simulate_key_action(
     mode: String,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let action_mode: ActionMode = mode.parse().map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+    let action_mode: ActionMode = mode
+        .parse()
+        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
     sim.key_action(&key, action_mode).map_err(|e| e.to_string())
 }
 
@@ -32,8 +34,12 @@ fn simulate_mouse_click(
     mode: String,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let btn: MouseButton = button.parse().map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
-    let action_mode: ActionMode = mode.parse().map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+    let btn: MouseButton = button
+        .parse()
+        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+    let action_mode: ActionMode = mode
+        .parse()
+        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
     sim.mouse_click(btn, action_mode).map_err(|e| e.to_string())
 }
 
@@ -45,7 +51,9 @@ fn simulate_mouse_move(
     mode: String,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let coord_mode: CoordinateMode = mode.parse().map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+    let coord_mode: CoordinateMode = mode
+        .parse()
+        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
     sim.mouse_move(x, y, coord_mode).map_err(|e| e.to_string())
 }
 
@@ -56,19 +64,26 @@ fn simulate_scroll(
     amount: i32,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let scroll_axis: ScrollAxis = axis.parse().map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+    let scroll_axis: ScrollAxis = axis
+        .parse()
+        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
     sim.scroll(scroll_axis, amount).map_err(|e| e.to_string())
 }
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                window.show().unwrap();
+                window.set_focus().unwrap();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            let simulator =
-                InputSimulator::new().map_err(|e| e.to_string())?;
+            let simulator = InputSimulator::new().map_err(|e| e.to_string())?;
             app.manage(SimulatorState {
                 simulator: Mutex::new(simulator),
             });
