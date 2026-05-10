@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Handle, Position, useSvelteFlow } from '@xyflow/svelte';
 	import BaseNode from './BaseNode.svelte';
+	import VariableNameCombobox from '$lib/components/VariableNameCombobox.svelte';
 	import { valueHandle } from '$lib/graph';
 	import type { GetVariableNodeData } from '$lib/types';
 
@@ -24,11 +25,9 @@
 >
 	<div class="input-container">
 		<span>Name:</span>
-		<input
-			class="nodrag"
-			type="text"
+		<VariableNameCombobox
 			value={data.variableName ?? 'value'}
-			oninput={(event) => updateNodeData(id, { variableName: event.currentTarget.value })}
+			onChange={(variableName) => updateNodeData(id, { variableName })}
 		/>
 	</div>
 </BaseNode>

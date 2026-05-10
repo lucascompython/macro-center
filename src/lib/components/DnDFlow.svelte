@@ -7,6 +7,8 @@
     Controls,
     Panel,
     useSvelteFlow,
+    type Node,
+    type Edge,
     type NodeTypes,
     type EdgeTypes,
     type IsValidConnection,
@@ -69,7 +71,26 @@
     readTextFile,
   } from "@tauri-apps/plugin-fs";
   import { MacroRunner } from "$lib/runner/MacroRunner";
-  import { onDestroy, setContext } from "svelte";
+  import { onDestroy, onMount, setContext } from "svelte";
+
+  type EditorSnapshot = {
+    nodes: Node[];
+    edges: Edge[];
+    variables: VariableDefinition[];
+    submacros: SubmacroDefinition[];
+  };
+
+  type GraphClipboard = {
+    nodes: Node[];
+    edges: Edge[];
+  };
+
+  type ContextMenuState = {
+    x: number;
+    y: number;
+    flowPosition: { x: number; y: number };
+    target: "pane" | "node" | "selection";
+  };
 
   // use $state.raw for performance as recommended by xyflow docs
   let nodes = $state.raw(initialNodes);
@@ -79,6 +100,13 @@
   let selectedNodes = $state.raw([] as typeof nodes);
   let variableSnapshot = $state({} as Record<string, MacroValue>);
   let showVariables = $state(false);
+  let undoStack = $state.raw([] as EditorSnapshot[]);
+  let redoStack = $state.raw([] as EditorSnapshot[]);
+  let copiedGraph = $state.raw<GraphClipboard | undefined>();
+  let contextMenu = $state<ContextMenuState | undefined>();
+  let pasteIndex = 0;
+  let applyingHistory = false;
+  let historyTimer: ReturnType<typeof setTimeout> | undefined;
 
   const valueSourceContext: ValueSourceContext = {
     getVariables: () => variables,
@@ -121,6 +149,99 @@
 
   setContext(SUBFLOW_RENAME_CONTEXT, renameSubflowDefinition);
   setContext(VALUE_SOURCE_CONTEXT, valueSourceContext);
+
+  function cloneData<T>(value: T): T {
+    return structuredClone(value);
+  }
+
+  function currentEditorSnapshot(): EditorSnapshot {
+    return {
+      nodes: cloneData(nodes),
+      edges: cloneData(edges),
+      variables: cloneData(variables),
+      submacros: cloneData(submacros),
+    };
+  }
+
+  function snapshotSignature(snapshot: EditorSnapshot) {
+    return JSON.stringify(snapshot);
+  }
+
+  let lastHistorySnapshot = currentEditorSnapshot();
+  let lastHistorySignature = snapshotSignature(lastHistorySnapshot);
+
+  function commitHistory() {
+    if (applyingHistory) return;
+
+    const snapshot = currentEditorSnapshot();
+    const signature = snapshotSignature(snapshot);
+    if (signature === lastHistorySignature) return;
+
+    undoStack = [...undoStack.slice(-79), lastHistorySnapshot];
+    redoStack = [];
+    lastHistorySnapshot = snapshot;
+    lastHistorySignature = signature;
+  }
+
+  function scheduleHistoryCommit() {
+    if (applyingHistory) return;
+    if (historyTimer) clearTimeout(historyTimer);
+    historyTimer = setTimeout(commitHistory, 220);
+  }
+
+  function flushHistoryCommit() {
+    if (historyTimer) {
+      clearTimeout(historyTimer);
+      historyTimer = undefined;
+    }
+    commitHistory();
+  }
+
+  function restoreSnapshot(snapshot: EditorSnapshot) {
+    applyingHistory = true;
+    nodes = cloneData(snapshot.nodes);
+    edges = cloneData(snapshot.edges);
+    variables = cloneData(snapshot.variables);
+    submacros = cloneData(snapshot.submacros);
+    selectedNodes = [];
+    lastHistorySnapshot = cloneData(snapshot);
+    lastHistorySignature = snapshotSignature(snapshot);
+    queueMicrotask(() => {
+      applyingHistory = false;
+    });
+  }
+
+  function undo() {
+    flushHistoryCommit();
+    const snapshot = undoStack.at(-1);
+    if (!snapshot) return;
+
+    const current = currentEditorSnapshot();
+    undoStack = undoStack.slice(0, -1);
+    redoStack = [current, ...redoStack.slice(0, 79)];
+    restoreSnapshot(snapshot);
+    closeContextMenu();
+  }
+
+  function redo() {
+    flushHistoryCommit();
+    const snapshot = redoStack[0];
+    if (!snapshot) return;
+
+    const current = currentEditorSnapshot();
+    redoStack = redoStack.slice(1);
+    undoStack = [...undoStack.slice(-79), current];
+    restoreSnapshot(snapshot);
+    closeContextMenu();
+  }
+
+  $effect(() => {
+    nodes;
+    edges;
+    variables;
+    submacros;
+    scheduleHistoryCommit();
+  });
 
   const nodeTypes: NodeTypes = {
     keyBindNode: KeyBindNode,
@@ -194,9 +315,163 @@
   }
 
   onDestroy(() => {
+    if (historyTimer) {
+      clearTimeout(historyTimer);
+    }
+
     if (runner) {
       runner.cleanup();
     }
+  });
+
+  function closeContextMenu() {
+    contextMenu = undefined;
+  }
+
+  function isEditingTarget(target: EventTarget | null) {
+    if (!(target instanceof HTMLElement)) return false;
+    return Boolean(
+      target.closest("input, textarea, select, [contenteditable='true']"),
+    );
+  }
+
+  function selectedNodeIdsWithDescendants() {
+    const copiedIds = new Set(selectedNodes.map((node) => node.id));
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      for (const node of nodes) {
+        if (node.parentId && copiedIds.has(node.parentId) && !copiedIds.has(node.id)) {
+          copiedIds.add(node.id);
+          changed = true;
+        }
+      }
+    }
+
+    return copiedIds;
+  }
+
+  function copySelection() {
+    const copiedIds = selectedNodeIdsWithDescendants();
+    if (copiedIds.size === 0) return;
+
+    copiedGraph = {
+      nodes: cloneData(nodes.filter((node) => copiedIds.has(node.id))),
+      edges: cloneData(edges.filter((edge) => copiedIds.has(edge.source) && copiedIds.has(edge.target))),
+    };
+    pasteIndex = 0;
+    closeContextMenu();
+  }
+
+  function graphBounds(copiedNodes: Node[]) {
+    const rootNodes = copiedNodes.filter((node) => !node.parentId || !copiedNodes.some((copy) => copy.id === node.parentId));
+    const candidates = rootNodes.length > 0 ? rootNodes : copiedNodes;
+    const minX = Math.min(...candidates.map((node) => node.position.x));
+    const minY = Math.min(...candidates.map((node) => node.position.y));
+
+    return { minX, minY };
+  }
+
+  function pasteSelection(position?: { x: number; y: number }) {
+    if (!copiedGraph || copiedGraph.nodes.length === 0) return;
+
+    const copiedIds = new Set(copiedGraph.nodes.map((node) => node.id));
+    const idMap = new Map(copiedGraph.nodes.map((node) => [node.id, crypto.randomUUID()]));
+    const bounds = graphBounds(copiedGraph.nodes);
+    const fallbackOffset = 36 * (pasteIndex + 1);
+    const offset = position
+      ? {
+          x: position.x - bounds.minX,
+          y: position.y - bounds.minY,
+        }
+      : {
+          x: fallbackOffset,
+          y: fallbackOffset,
+        };
+
+    const pastedNodes = copiedGraph.nodes.map((node) => {
+      const nextNode = cloneData(node) as Node & {
+        parentId?: string;
+        extent?: Node["extent"];
+      };
+      nextNode.id = idMap.get(node.id) ?? crypto.randomUUID();
+      nextNode.selected = true;
+
+      if (node.parentId && copiedIds.has(node.parentId)) {
+        nextNode.parentId = idMap.get(node.parentId);
+      } else {
+        delete nextNode.parentId;
+        delete nextNode.extent;
+        nextNode.position = {
+          x: node.position.x + offset.x,
+          y: node.position.y + offset.y,
+        };
+      }
+
+      return nextNode;
+    });
+
+    const pastedEdges = copiedGraph.edges.map((edge) => ({
+      ...cloneData(edge),
+      id: `e-${idMap.get(edge.source)}-${idMap.get(edge.target)}-${crypto.randomUUID()}`,
+      source: idMap.get(edge.source) ?? edge.source,
+      target: idMap.get(edge.target) ?? edge.target,
+      selected: false,
+    }));
+
+    nodes = [
+      ...nodes.map((node) => ({ ...node, selected: false })),
+      ...pastedNodes,
+    ];
+    edges = [
+      ...edges.map((edge) => ({ ...edge, selected: false })),
+      ...pastedEdges,
+    ];
+    selectedNodes = pastedNodes;
+    pasteIndex += 1;
+    closeContextMenu();
+  }
+
+  function deleteSelection() {
+    const selectedIds = selectedNodeIdsWithDescendants();
+    if (selectedIds.size === 0) return;
+
+    nodes = nodes.filter((node) => !selectedIds.has(node.id));
+    edges = edges.filter((edge) => !selectedIds.has(edge.source) && !selectedIds.has(edge.target));
+    selectedNodes = [];
+    closeContextMenu();
+  }
+
+  function handleKeyDown(event: KeyboardEvent) {
+    if (isEditingTarget(event.target)) return;
+
+    const shortcut = event.ctrlKey || event.metaKey;
+    if (!shortcut) return;
+
+    const key = event.key.toLowerCase();
+
+    if (key === "z" && event.shiftKey) {
+      event.preventDefault();
+      redo();
+    } else if (key === "z") {
+      event.preventDefault();
+      undo();
+    } else if (key === "y") {
+      event.preventDefault();
+      redo();
+    } else if (key === "c") {
+      event.preventDefault();
+      copySelection();
+    } else if (key === "v") {
+      event.preventDefault();
+      pasteSelection();
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   });
 
   async function saveMacro() {
@@ -351,6 +626,44 @@
     selectedNodes = selection.nodes;
   }
 
+  function openContextMenu(
+    event: MouseEvent,
+    target: ContextMenuState["target"],
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    contextMenu = {
+      x: event.clientX,
+      y: event.clientY,
+      flowPosition: screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      }),
+      target,
+    };
+  }
+
+  function handlePaneContextMenu({ event }: { event: MouseEvent }) {
+    openContextMenu(event, "pane");
+  }
+
+  function handleSelectionContextMenu({ event }: { event: MouseEvent; nodes: Node[] }) {
+    openContextMenu(event, "selection");
+  }
+
+  function handleNodeContextMenu({ event, node }: { event: MouseEvent; node: Node }) {
+    if (!selectedNodes.some((selectedNode) => selectedNode.id === node.id)) {
+      nodes = nodes.map((candidate) => ({
+        ...candidate,
+        selected: candidate.id === node.id,
+      }));
+      selectedNodes = [node];
+    }
+
+    openContextMenu(event, "node");
+  }
+
   function createSubmacroFromSelection() {
     const result = createSubmacroFromSelectionModel({
       nodes,
@@ -364,6 +677,7 @@
     nodes = result.nodes;
     edges = result.edges;
     selectedNodes = [];
+    closeContextMenu();
   }
 
   function addSubmacroInstance(definition: SubmacroDefinition) {
@@ -399,6 +713,10 @@
     {isValidConnection}
     onbeforeconnect={onBeforeConnect}
     onselectionchange={handleSelectionChange}
+    onpanecontextmenu={handlePaneContextMenu}
+    onselectioncontextmenu={handleSelectionContextMenu}
+    onnodecontextmenu={handleNodeContextMenu}
+    onpaneclick={closeContextMenu}
     fitView
     colorMode="dark"
     proOptions={{ hideAttribution: true }}
@@ -423,6 +741,12 @@
     </svg>
     <Controls />
     <Panel position="top-right">
+      <button class="panel-btn" disabled={undoStack.length === 0} onclick={undo}>
+        Undo
+      </button>
+      <button class="panel-btn" disabled={redoStack.length === 0} onclick={redo}>
+        Redo
+      </button>
       <button class="panel-btn" onclick={toggleExecution}>
         {isRunning ? "Stop" : "Run"}
       </button>
@@ -456,6 +780,50 @@
     </Panel>
     <MiniMap />
   </SvelteFlow>
+
+  {#if contextMenu}
+    <div
+      class="context-menu"
+      style={`left: ${contextMenu.x}px; top: ${contextMenu.y}px;`}
+      role="menu"
+      tabindex="-1"
+      oncontextmenu={(event) => event.preventDefault()}
+    >
+      <button role="menuitem" disabled={undoStack.length === 0} onclick={undo}>Undo</button>
+      <button role="menuitem" disabled={redoStack.length === 0} onclick={redo}>Redo</button>
+      <div class="menu-separator"></div>
+      <button
+        role="menuitem"
+        disabled={selectedNodes.length === 0}
+        onclick={copySelection}
+      >
+        Copy
+      </button>
+      <button
+        role="menuitem"
+        disabled={!copiedGraph}
+        onclick={() => pasteSelection(contextMenu?.flowPosition)}
+      >
+        Paste
+      </button>
+      <button
+        role="menuitem"
+        disabled={selectedNodes.length === 0}
+        onclick={createSubmacroFromSelection}
+      >
+        Create Subflow
+      </button>
+      <div class="menu-separator"></div>
+      <button
+        role="menuitem"
+        class="danger"
+        disabled={selectedNodes.length === 0}
+        onclick={deleteSelection}
+      >
+        Delete
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -519,5 +887,49 @@
     font-size: 0.78rem;
     padding: 0.35rem 0.45rem;
     text-align: left;
+  }
+
+  .context-menu {
+    background: rgba(18, 18, 18, 0.98);
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.36);
+    display: grid;
+    gap: 0.15rem;
+    min-width: 168px;
+    padding: 0.3rem;
+    position: fixed;
+    z-index: 20;
+  }
+
+  .context-menu button {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #f1f1f1;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.38rem 0.5rem;
+    text-align: left;
+  }
+
+  .context-menu button:hover:not(:disabled) {
+    background: #2c2d2f;
+  }
+
+  .context-menu button:disabled {
+    color: #686868;
+    cursor: not-allowed;
+  }
+
+  .context-menu button.danger {
+    color: #ff8aa8;
+  }
+
+  .menu-separator {
+    background: #303030;
+    height: 1px;
+    margin: 0.15rem 0;
   }
 </style>
