@@ -27,18 +27,30 @@ pub struct HotkeyEvent {
     pub state: HotkeyState,
 }
 
-/// Manager for global hotkeys.
+/// Backend abstraction for registering and receiving global hotkeys.
+pub trait HotKeyBackend {
+    fn register(&mut self, hotkey_str: &str) -> Result<u32>;
+    fn unregister(&mut self, id: u32) -> Result<()>;
+    fn unregister_all(&mut self) -> Result<()>;
+    fn poll_event(&self) -> Option<HotkeyEvent>;
+    fn registered_ids(&self) -> Vec<u32>;
+}
+
+/// Global hotkey backend backed by the same global-hotkey APIs used by Tauri.
 ///
 /// # Platform Requirements
 ///
 /// - **Windows**: A win32 event loop must be running on the same thread.
 /// - **macOS**: An event loop must be running on the main thread.
-pub struct HotkeyManager {
+pub struct TauriGlobalHotkey {
     manager: GlobalHotKeyManager,
     registered: HashMap<u32, HotKey>,
 }
 
-impl HotkeyManager {
+/// Backwards-compatible name for the default hotkey manager.
+pub type HotkeyManager = TauriGlobalHotkey;
+
+impl TauriGlobalHotkey {
     /// Create a new hotkey manager.
     ///
     /// Must be called on a thread with an active event loop (see platform requirements).
@@ -144,6 +156,28 @@ impl HotkeyManager {
                 state,
             }
         })
+    }
+}
+
+impl HotKeyBackend for TauriGlobalHotkey {
+    fn register(&mut self, hotkey_str: &str) -> Result<u32> {
+        TauriGlobalHotkey::register(self, hotkey_str)
+    }
+
+    fn unregister(&mut self, id: u32) -> Result<()> {
+        TauriGlobalHotkey::unregister(self, id)
+    }
+
+    fn unregister_all(&mut self) -> Result<()> {
+        TauriGlobalHotkey::unregister_all(self)
+    }
+
+    fn poll_event(&self) -> Option<HotkeyEvent> {
+        TauriGlobalHotkey::poll_event(self)
+    }
+
+    fn registered_ids(&self) -> Vec<u32> {
+        TauriGlobalHotkey::registered_ids(self)
     }
 }
 

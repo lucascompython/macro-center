@@ -163,6 +163,9 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - Fix the Keybind node to work with numpad keys
 - Fix the Keybind node to work with mouse buttons
 
+- In context menu when selecting nodes, add option to reduce the delay of all nodes or increase it by dragging the mouse.
+- In context menu when selecting nodes, add option to delete all the delays in the selected nodes
+
 - Add a Comment node for users to add notes and explanations to their macros, this would be especially useful for complex macros or for sharing macros with others.
 
 - Create C header
@@ -178,5 +181,4 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 
 - Make it so you can select nodes and copy/paste them
 - Add a tool to see the mouse coordinates, to make it easier to create mouse move nodes
-- Add a tool to record user actions and convert them into macros, this would be a separate page/mode
 - Add a way to export macros as standalone scripts that can be run without the Macro Center application, this would be useful for sharing macros with others who don't have the app installed. Either by compiling them to native executables or by creating a small lightweight headless runtime that can execute the macros without the need for the full application.

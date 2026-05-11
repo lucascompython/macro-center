@@ -90,7 +90,7 @@ impl PyInputSimulator {
 }
 
 /// Global hotkey manager.
-#[pyclass(name = "HotkeyManager")]
+#[pyclass(name = "HotkeyManager", unsendable)]
 struct PyHotkeyManager {
     inner: HotkeyManager,
 }

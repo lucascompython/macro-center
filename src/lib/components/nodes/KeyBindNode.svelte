@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { useSvelteFlow } from "@xyflow/svelte";
 	import BaseNode from "./BaseNode.svelte";
+	import {
+		MODIFIER_KEYS,
+		modifierShortcutPreview,
+		shortcutFromKeyboardEvent,
+	} from "$lib/shortcuts";
 	import type { KeyBindNodeData } from "$lib/types";
 
 	interface Props {
@@ -21,37 +26,6 @@
 		}
 	});
 
-	const MODIFIER_KEYS = new Set(["Control", "Shift", "Alt", "Meta"]);
-
-	// map KeyboardEvent.key values to the accelerator format tauri expects
-	function keyToAccelerator(key: string): string {
-		const map: Record<string, string> = {
-			Control: "Ctrl",
-			Meta: "Super",
-			" ": "Space",
-			ArrowUp: "Up",
-			ArrowDown: "Down",
-			ArrowLeft: "Left",
-			ArrowRight: "Right",
-			Escape: "Escape",
-			Enter: "Enter",
-			Backspace: "Backspace",
-			Delete: "Delete",
-			Tab: "Tab",
-			Home: "Home",
-			End: "End",
-			PageUp: "PageUp",
-			PageDown: "PageDown",
-			Insert: "Insert",
-		};
-		if (map[key]) return map[key];
-		// F-keys
-		if (/^F\d{1,2}$/.test(key)) return key;
-		// single character keys - uppercase for the accelerator
-		if (key.length === 1) return key.toUpperCase();
-		return key;
-	}
-
 	function startRecording() {
 		recording = true;
 		display = "...";
@@ -71,24 +45,15 @@
 
 		// if only a modifier was pressed, show it live but don't commit
 		if (MODIFIER_KEYS.has(e.key)) {
-			const parts: string[] = [];
-			if (e.ctrlKey) parts.push("Ctrl");
-			if (e.shiftKey) parts.push("Shift");
-			if (e.altKey) parts.push("Alt");
-			if (e.metaKey) parts.push("Super");
-			display = parts.join("+") + "+...";
+			display = modifierShortcutPreview(e);
 			return;
 		}
 
 		// non-modifier key pressed - build the full shortcut and commit
-		const parts: string[] = [];
-		if (e.ctrlKey) parts.push("Ctrl");
-		if (e.shiftKey) parts.push("Shift");
-		if (e.altKey) parts.push("Alt");
-		if (e.metaKey) parts.push("Super");
-		parts.push(keyToAccelerator(e.key));
-
-		stopRecording(parts.join("+"));
+		const shortcut = shortcutFromKeyboardEvent(e);
+		if (shortcut) {
+			stopRecording(shortcut);
+		}
 	}
 
 	function handleBlur() {

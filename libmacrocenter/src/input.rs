@@ -1,32 +1,70 @@
-use enigo::{Axis, Button, Coordinate, Direction, Enigo, Key, Keyboard, Mouse, Settings};
+use enigo::Direction;
+use enigo::{Axis, Button, Coordinate, Enigo, Key, Keyboard, Mouse, Settings};
 
 use crate::error::{MacroCenterError, Result};
 use crate::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
 
-/// Input simulator wrapping enigo for keyboard and mouse simulation.
-pub struct InputSimulator {
+/// Backend abstraction for emitting keyboard and mouse actions.
+pub trait EmitterBackend {
+    fn type_text(&mut self, text: &str) -> Result<()>;
+    fn key_action(&mut self, key: &str, mode: ActionMode) -> Result<()>;
+    fn mouse_click(&mut self, button: MouseButton, mode: ActionMode) -> Result<()>;
+    fn mouse_move(&mut self, x: i32, y: i32, mode: CoordinateMode) -> Result<()>;
+    fn scroll(&mut self, axis: ScrollAxis, amount: i32) -> Result<()>;
+}
+
+/// Input emitter wrapping enigo for keyboard and mouse simulation.
+pub struct EnigoEmitter {
     enigo: Enigo,
 }
 
-impl InputSimulator {
-    /// Create a new input simulator with default settings.
+/// Backwards-compatible name for the default input simulator.
+pub type InputSimulator = EnigoEmitter;
+
+impl EnigoEmitter {
+    /// Create a new input emitter with default settings.
     pub fn new() -> Result<Self> {
-        let enigo =
-            Enigo::new(&Settings::default()).map_err(|e| MacroCenterError::InputError(e.to_string()))?;
+        let enigo = Enigo::new(&Settings::default())
+            .map_err(|e| MacroCenterError::InputError(e.to_string()))?;
         Ok(Self { enigo })
     }
 
     /// Type a string of text.
     pub fn type_text(&mut self, text: &str) -> Result<()> {
-        self.enigo
-            .text(text)
-            .map_err(|e| MacroCenterError::InputError(e.to_string()))
+        EmitterBackend::type_text(self, text)
     }
 
     /// Perform a key action (click, press, or release).
     ///
     /// The `key` parameter is a human-readable key name like "enter", "tab", "a", "F5", etc.
     pub fn key_action(&mut self, key: &str, mode: ActionMode) -> Result<()> {
+        EmitterBackend::key_action(self, key, mode)
+    }
+
+    /// Perform a mouse button action (click, press, or release).
+    pub fn mouse_click(&mut self, button: MouseButton, mode: ActionMode) -> Result<()> {
+        EmitterBackend::mouse_click(self, button, mode)
+    }
+
+    /// Move the mouse cursor.
+    pub fn mouse_move(&mut self, x: i32, y: i32, mode: CoordinateMode) -> Result<()> {
+        EmitterBackend::mouse_move(self, x, y, mode)
+    }
+
+    /// Scroll the mouse wheel.
+    pub fn scroll(&mut self, axis: ScrollAxis, amount: i32) -> Result<()> {
+        EmitterBackend::scroll(self, axis, amount)
+    }
+}
+
+impl EmitterBackend for EnigoEmitter {
+    fn type_text(&mut self, text: &str) -> Result<()> {
+        self.enigo
+            .text(text)
+            .map_err(|e| MacroCenterError::InputError(e.to_string()))
+    }
+
+    fn key_action(&mut self, key: &str, mode: ActionMode) -> Result<()> {
         let key_enum = parse_key(key)?;
         let direction = action_mode_to_direction(mode);
 
@@ -35,8 +73,7 @@ impl InputSimulator {
             .map_err(|e| MacroCenterError::InputError(e.to_string()))
     }
 
-    /// Perform a mouse button action (click, press, or release).
-    pub fn mouse_click(&mut self, button: MouseButton, mode: ActionMode) -> Result<()> {
+    fn mouse_click(&mut self, button: MouseButton, mode: ActionMode) -> Result<()> {
         let button_enum = mouse_button_to_enigo(button);
         let direction = action_mode_to_direction(mode);
 
@@ -45,8 +82,7 @@ impl InputSimulator {
             .map_err(|e| MacroCenterError::InputError(e.to_string()))
     }
 
-    /// Move the mouse cursor.
-    pub fn mouse_move(&mut self, x: i32, y: i32, mode: CoordinateMode) -> Result<()> {
+    fn mouse_move(&mut self, x: i32, y: i32, mode: CoordinateMode) -> Result<()> {
         let coordinate = match mode {
             CoordinateMode::Absolute => Coordinate::Abs,
             CoordinateMode::Relative => Coordinate::Rel,
@@ -57,8 +93,7 @@ impl InputSimulator {
             .map_err(|e| MacroCenterError::InputError(e.to_string()))
     }
 
-    /// Scroll the mouse wheel.
-    pub fn scroll(&mut self, axis: ScrollAxis, amount: i32) -> Result<()> {
+    fn scroll(&mut self, axis: ScrollAxis, amount: i32) -> Result<()> {
         let direction = match axis {
             ScrollAxis::Vertical => Axis::Vertical,
             ScrollAxis::Horizontal => Axis::Horizontal,
@@ -91,7 +126,15 @@ pub fn parse_key(key: &str) -> Result<Key> {
         "home" => Ok(Key::Home),
         "end" => Ok(Key::End),
         "delete" | "del" => Ok(Key::Delete),
+        #[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
+        "insert" => Ok(Key::Insert),
         "capslock" => Ok(Key::CapsLock),
+        #[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
+        "printscreen" | "printscr" => Ok(Key::PrintScr),
+        #[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
+        "numlock" => Ok(Key::Numlock),
+        #[cfg(any(target_os = "windows", all(unix, not(target_os = "macos"))))]
+        "pause" => Ok(Key::Pause),
         "f1" => Ok(Key::F1),
         "f2" => Ok(Key::F2),
         "f3" => Ok(Key::F3),
@@ -104,8 +147,18 @@ pub fn parse_key(key: &str) -> Result<Key> {
         "f10" => Ok(Key::F10),
         "f11" => Ok(Key::F11),
         "f12" => Ok(Key::F12),
+        "f13" => Ok(Key::F13),
+        "f14" => Ok(Key::F14),
+        "f15" => Ok(Key::F15),
+        "f16" => Ok(Key::F16),
+        "f17" => Ok(Key::F17),
+        "f18" => Ok(Key::F18),
+        "f19" => Ok(Key::F19),
+        "f20" => Ok(Key::F20),
         s if s.len() == 1 => Ok(Key::Unicode(s.chars().next().unwrap())),
-        _ => Err(MacroCenterError::ParseError(format!("Unknown key: '{key}'"))),
+        _ => Err(MacroCenterError::ParseError(format!(
+            "Unknown key: '{key}'"
+        ))),
     }
 }
 
@@ -124,6 +177,8 @@ fn mouse_button_to_enigo(button: MouseButton) -> Button {
         MouseButton::Left => Button::Left,
         MouseButton::Right => Button::Right,
         MouseButton::Middle => Button::Middle,
+        MouseButton::Mouse4 => Button::Back,
+        MouseButton::Mouse5 => Button::Forward,
     }
 }
 
@@ -207,6 +262,14 @@ mod tests {
         assert!(matches!(
             mouse_button_to_enigo(MouseButton::Middle),
             Button::Middle
+        ));
+        assert!(matches!(
+            mouse_button_to_enigo(MouseButton::Mouse4),
+            Button::Back
+        ));
+        assert!(matches!(
+            mouse_button_to_enigo(MouseButton::Mouse5),
+            Button::Forward
         ));
     }
 }

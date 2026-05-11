@@ -12,4 +12,7 @@ rapidhash = ["rapidhash/nightly", "rapidhash/unsafe", "rapidhash/rng"]
 enigo = { version = "0.6" }
 global-hotkey = "0.7"
 rapidhash = { version = "4", features = ["nightly", "unsafe", "rng"], optional = true }
+rdev = { git = "https://github.com/Narsil/rdev" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 thiserror = "2"

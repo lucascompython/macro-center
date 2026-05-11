@@ -1,11 +1,16 @@
 use std::sync::Mutex;
 
 use libmacrocenter::input::InputSimulator;
+use libmacrocenter::recording::{RdevRecorder, RecordedMacro, RecorderBackend, RecordingMouseMode};
 use libmacrocenter::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
 use tauri::Manager;
 
 struct SimulatorState {
     simulator: Mutex<InputSimulator>,
+}
+
+struct RecorderState {
+    recorder: RdevRecorder,
 }
 
 #[tauri::command]
@@ -70,6 +75,29 @@ fn simulate_scroll(
     sim.scroll(scroll_axis, amount).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn start_macro_recording(state: tauri::State<RecorderState>, mode: String) -> Result<(), String> {
+    let mode: RecordingMouseMode = mode
+        .parse()
+        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+    state
+        .recorder
+        .start_recording(mode)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn stop_macro_recording(state: tauri::State<RecorderState>) -> Result<RecordedMacro, String> {
+    let mut recorded = state.recorder.stop_recording().map_err(|e| e.to_string())?;
+    recorded.trim_trailing_mouse_click();
+    Ok(recorded)
+}
+
+#[tauri::command]
+fn is_macro_recording(state: tauri::State<RecorderState>) -> bool {
+    state.recorder.is_recording()
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -88,6 +116,9 @@ pub fn run() {
             app.manage(SimulatorState {
                 simulator: Mutex::new(simulator),
             });
+            app.manage(RecorderState {
+                recorder: RdevRecorder::new(),
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -95,7 +126,10 @@ pub fn run() {
             simulate_key_action,
             simulate_mouse_click,
             simulate_mouse_move,
-            simulate_scroll
+            simulate_scroll,
+            start_macro_recording,
+            stop_macro_recording,
+            is_macro_recording
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

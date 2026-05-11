@@ -65,12 +65,23 @@
     type ValueSourceContext,
   } from "$lib/editor-context";
 
+  import { invoke } from "@tauri-apps/api/core";
   import { save, open } from "@tauri-apps/plugin-dialog";
   import {
     writeTextFile,
     readTextFile,
   } from "@tauri-apps/plugin-fs";
+  import {
+    recordedMacroToGraph,
+    type RecordedMacro,
+    type RecordingMouseMode,
+  } from "$lib/recording";
   import { MacroRunner } from "$lib/runner/MacroRunner";
+  import {
+    MODIFIER_KEYS,
+    modifierShortcutPreview,
+    shortcutFromKeyboardEvent,
+  } from "$lib/shortcuts";
   import { onDestroy, onMount, setContext } from "svelte";
 
   type EditorSnapshot = {
@@ -295,6 +306,12 @@
 
   let runner: MacroRunner | undefined = $state();
   let isRunning = $state(false);
+  let isRecording = $state(false);
+  let recordingMode = $state<RecordingMouseMode>("movesBeforeClicks");
+  let recordingError = $state("");
+  let pendingRecordedMacro = $state<RecordedMacro | undefined>();
+  let recordedShortcut = $state("");
+  let recordingShortcut = $state(false);
 
   function toggleExecution() {
     if (isRunning) {
@@ -314,6 +331,105 @@
     }
   }
 
+  async function toggleRecording() {
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
+  }
+
+  async function startRecording() {
+    recordingError = "";
+    pendingRecordedMacro = undefined;
+    try {
+      await invoke("start_macro_recording", { mode: recordingMode });
+      isRecording = true;
+    } catch (error) {
+      recordingError = String(error);
+      console.error("Failed to start recording:", error);
+    }
+  }
+
+  async function stopRecording() {
+    recordingError = "";
+    try {
+      const recorded = await invoke<RecordedMacro>("stop_macro_recording");
+      isRecording = false;
+
+      if (recorded.actions.length === 0) {
+        recordingError = "No actions captured.";
+        return;
+      }
+
+      pendingRecordedMacro = recorded;
+      recordedShortcut = "";
+      recordingShortcut = true;
+    } catch (error) {
+      recordingError = String(error);
+      console.error("Failed to stop recording:", error);
+    }
+  }
+
+  function startShortcutRecording() {
+    recordingShortcut = true;
+    recordedShortcut = "...";
+  }
+
+  function shortcutReady(shortcut = recordedShortcut) {
+    return Boolean(shortcut) && shortcut !== "..." && !shortcut.endsWith("+...");
+  }
+
+  function handleRecordedShortcutKeyDown(event: KeyboardEvent) {
+    if (!recordingShortcut) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (MODIFIER_KEYS.has(event.key)) {
+      recordedShortcut = modifierShortcutPreview(event);
+      return;
+    }
+
+    const shortcut = shortcutFromKeyboardEvent(event);
+    if (shortcut) {
+      recordedShortcut = shortcut;
+      recordingShortcut = false;
+    }
+  }
+
+  function createRecordedMacro(shortcut = recordedShortcut.trim()) {
+    if (!pendingRecordedMacro) return;
+
+    const graph = recordedMacroToGraph(
+      pendingRecordedMacro,
+      shortcutReady(shortcut) ? shortcut : "",
+      screenToFlowPosition({ x: 320, y: 120 }),
+    );
+
+    const selectedRecordedNodes = graph.nodes.map((node) => ({
+      ...node,
+      selected: true,
+    }));
+
+    nodes = [
+      ...nodes.map((node) => ({ ...node, selected: false })),
+      ...selectedRecordedNodes,
+    ];
+    edges = [...edges, ...graph.edges];
+    selectedNodes = selectedRecordedNodes;
+    pendingRecordedMacro = undefined;
+    recordedShortcut = "";
+    recordingShortcut = false;
+    closeContextMenu();
+  }
+
+  function discardRecordedMacro() {
+    pendingRecordedMacro = undefined;
+    recordedShortcut = "";
+    recordingShortcut = false;
+  }
+
   onDestroy(() => {
     if (historyTimer) {
       clearTimeout(historyTimer);
@@ -321,6 +437,10 @@
 
     if (runner) {
       runner.cleanup();
+    }
+
+    if (isRecording) {
+      void invoke("stop_macro_recording");
     }
   });
 
@@ -747,7 +867,24 @@
       <button class="panel-btn" disabled={redoStack.length === 0} onclick={redo}>
         Redo
       </button>
-      <button class="panel-btn" onclick={toggleExecution}>
+      <select
+        class="panel-select"
+        bind:value={recordingMode}
+        disabled={isRecording}
+        aria-label="Recording mode"
+      >
+        <option value="movesBeforeClicks">Clicks only</option>
+        <option value="allMoves">All movement</option>
+      </select>
+      <button
+        class="panel-btn record-btn"
+        class:recording={isRecording}
+        disabled={isRunning}
+        onclick={toggleRecording}
+      >
+        {isRecording ? "Stop Recording" : "Record"}
+      </button>
+      <button class="panel-btn" disabled={isRecording} onclick={toggleExecution}>
         {isRunning ? "Stop" : "Run"}
       </button>
       <button class="panel-btn" onclick={() => (showVariables = !showVariables)}>
@@ -780,6 +917,12 @@
     </Panel>
     <MiniMap />
   </SvelteFlow>
+
+  {#if recordingError}
+    <div class="recording-error" role="status">
+      {recordingError}
+    </div>
+  {/if}
 
   {#if contextMenu}
     <div
@@ -824,6 +967,49 @@
       </button>
     </div>
   {/if}
+
+  {#if pendingRecordedMacro}
+    <div class="recording-dialog-backdrop">
+      <div
+        class="recording-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recording-dialog-title"
+      >
+        <h2 id="recording-dialog-title">Set Keybind</h2>
+        <div class="recording-summary">
+          {pendingRecordedMacro.actions.length} actions recorded
+        </div>
+        <button
+          class="shortcut-capture"
+          class:recording={recordingShortcut}
+          onkeydown={handleRecordedShortcutKeyDown}
+          onclick={startShortcutRecording}
+          onblur={() => {
+            if (recordingShortcut) {
+              recordingShortcut = false;
+              recordedShortcut = shortcutReady() ? recordedShortcut : "";
+            }
+          }}
+        >
+          {recordedShortcut && recordedShortcut !== "..." ? recordedShortcut : "Record keybind"}
+        </button>
+        <div class="dialog-actions">
+          <button class="panel-btn" onclick={discardRecordedMacro}>Discard</button>
+          <button class="panel-btn" onclick={() => createRecordedMacro("")}>
+            Skip Keybind
+          </button>
+          <button
+            class="panel-btn primary"
+            disabled={!shortcutReady()}
+            onclick={() => createRecordedMacro()}
+          >
+            Create Macro
+          </button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -854,9 +1040,54 @@
     color: #fff;
   }
 
+  .panel-btn.primary {
+    background: #2a8af6;
+    border-color: #4ba0ff;
+    color: #fff;
+  }
+
+  .panel-btn.record-btn.recording {
+    background: #3a2029;
+    border-color: #e92a67;
+    color: #fff;
+  }
+
   .panel-btn:disabled {
     cursor: not-allowed;
     opacity: 0.45;
+  }
+
+  .panel-select {
+    background: #232426;
+    border: 1px solid #3e3e3e;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 8px;
+    min-height: 29px;
+    padding: 5px 28px 5px 8px;
+  }
+
+  .panel-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .recording-error {
+    background: rgba(58, 32, 41, 0.96);
+    border: 1px solid #e92a67;
+    border-radius: 6px;
+    color: #ffd7e2;
+    font-size: 0.8rem;
+    left: 50%;
+    max-width: min(460px, calc(100vw - 2rem));
+    padding: 0.55rem 0.75rem;
+    position: fixed;
+    top: 64px;
+    transform: translateX(-50%);
+    z-index: 30;
   }
 
   .submacro-panel {
@@ -931,5 +1162,74 @@
     background: #303030;
     height: 1px;
     margin: 0.15rem 0;
+  }
+
+  .recording-dialog-backdrop {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.42);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 40;
+  }
+
+  .recording-dialog {
+    background: #18191b;
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    color: #f1f1f1;
+    display: grid;
+    gap: 0.75rem;
+    max-width: min(360px, calc(100vw - 2rem));
+    padding: 1rem;
+    width: 100%;
+  }
+
+  .recording-dialog h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .recording-summary {
+    color: #9da3ad;
+    font-size: 0.82rem;
+  }
+
+  .shortcut-capture {
+    align-items: center;
+    background: #2c2d2f;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    display: flex;
+    font-family: "Fira Mono", monospace;
+    font-size: 0.9rem;
+    justify-content: center;
+    min-height: 40px;
+    overflow: hidden;
+    padding: 0.45rem 0.7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .shortcut-capture:focus,
+  .shortcut-capture.recording {
+    border-color: #e92a67;
+    box-shadow: 0 0 0 1px rgba(233, 42, 103, 0.3);
+    outline: none;
+  }
+
+  .dialog-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .dialog-actions .panel-btn {
+    margin-left: 0;
   }
 </style>

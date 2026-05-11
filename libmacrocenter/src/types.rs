@@ -1,10 +1,13 @@
 use std::fmt;
 use std::str::FromStr;
 
+use serde::{Deserialize, Serialize};
+
 use crate::error::MacroCenterError;
 
 /// Action mode for key and mouse button actions.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ActionMode {
     Click,
     Press,
@@ -37,7 +40,8 @@ impl fmt::Display for ActionMode {
 }
 
 /// Coordinate mode for mouse movement.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum CoordinateMode {
     Absolute,
     Relative,
@@ -67,7 +71,8 @@ impl fmt::Display for CoordinateMode {
 }
 
 /// Scroll axis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ScrollAxis {
     Vertical,
     Horizontal,
@@ -97,11 +102,14 @@ impl fmt::Display for ScrollAxis {
 }
 
 /// Mouse button.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum MouseButton {
     Left,
     Right,
     Middle,
+    Mouse4,
+    Mouse5,
 }
 
 impl FromStr for MouseButton {
@@ -112,8 +120,10 @@ impl FromStr for MouseButton {
             "left" => Ok(Self::Left),
             "right" => Ok(Self::Right),
             "middle" => Ok(Self::Middle),
+            "mouse4" | "back" => Ok(Self::Mouse4),
+            "mouse5" | "forward" => Ok(Self::Mouse5),
             _ => Err(MacroCenterError::ParseError(format!(
-                "Unknown mouse button: '{s}'. Expected 'left', 'right', or 'middle'"
+                "Unknown mouse button: '{s}'. Expected 'left', 'right', 'middle', 'mouse4', or 'mouse5'"
             ))),
         }
     }
@@ -125,6 +135,8 @@ impl fmt::Display for MouseButton {
             Self::Left => write!(f, "left"),
             Self::Right => write!(f, "right"),
             Self::Middle => write!(f, "middle"),
+            Self::Mouse4 => write!(f, "mouse4"),
+            Self::Mouse5 => write!(f, "mouse5"),
         }
     }
 }
@@ -175,6 +187,14 @@ mod tests {
             "MIDDLE".parse::<MouseButton>().unwrap(),
             MouseButton::Middle
         );
-        assert!("mouse4".parse::<MouseButton>().is_err());
+        assert_eq!(
+            "mouse4".parse::<MouseButton>().unwrap(),
+            MouseButton::Mouse4
+        );
+        assert_eq!(
+            "forward".parse::<MouseButton>().unwrap(),
+            MouseButton::Mouse5
+        );
+        assert!("invalid".parse::<MouseButton>().is_err());
     }
 }
