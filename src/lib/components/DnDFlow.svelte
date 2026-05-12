@@ -582,6 +582,276 @@
     });
   }
 
+  function optimizeTypingTextSelection() {
+    const runs = findTypingOptimizationRuns();
+    if (runs.length === 0) return;
+
+    const consumedIds = new Set(runs.flatMap((run) => [...run.consumedIds]));
+    const replacementNodes = runs.map((run) => {
+      const firstNode = run.nodes[0];
+      const replacement: Node = {
+        id: crypto.randomUUID(),
+        type: "typeNode",
+        position: firstNode.position,
+        data: {
+          title: "Type Text",
+          subline: "Optimized typed text",
+          text: run.text,
+        },
+        selected: true,
+      };
+
+      if (firstNode.parentId) {
+        replacement.parentId = firstNode.parentId;
+        replacement.extent = firstNode.extent;
+      }
+      if (firstNode.origin) {
+        replacement.origin = firstNode.origin;
+      }
+
+      return replacement;
+    });
+    const replacementByRun = new Map(runs.map((run, index) => [run, replacementNodes[index]]));
+    const keptEdges = edges.filter(
+      (edge) => !consumedIds.has(edge.source) && !consumedIds.has(edge.target),
+    );
+    const edgeKeys = new Set(
+      keptEdges.map(
+        (edge) =>
+          `${edge.source}:${edge.sourceHandle ?? ""}->${edge.target}:${edge.targetHandle ?? ""}`,
+      ),
+    );
+    const replacementEdges: Edge[] = [];
+
+    for (const run of runs) {
+      const replacement = replacementByRun.get(run);
+      if (!replacement) continue;
+
+      for (const incomingEdge of run.incomingEdges) {
+        addReplacementEdge(
+          replacementEdges,
+          edgeKeys,
+          incomingEdge.source,
+          incomingEdge.sourceHandle ?? null,
+          replacement.id,
+          incomingEdge.targetHandle ?? null,
+        );
+      }
+
+      for (const outgoingEdge of run.outgoingEdges) {
+        addReplacementEdge(
+          replacementEdges,
+          edgeKeys,
+          replacement.id,
+          outgoingEdge.sourceHandle ?? null,
+          outgoingEdge.target,
+          outgoingEdge.targetHandle ?? null,
+        );
+      }
+    }
+
+    nodes = [
+      ...nodes.filter((node) => !consumedIds.has(node.id)).map((node) => ({ ...node, selected: false })),
+      ...replacementNodes,
+    ];
+    edges = [...keptEdges, ...replacementEdges];
+    selectedNodes = replacementNodes;
+    closeContextMenu();
+  }
+
+  function canOptimizeTypingTextSelection() {
+    return findTypingOptimizationRuns().length > 0;
+  }
+
+  type TypingRun = {
+    text: string;
+    nodes: Node[];
+    consumedIds: Set<string>;
+    incomingEdges: Edge[];
+    outgoingEdges: Edge[];
+  };
+
+  function findTypingOptimizationRuns(): TypingRun[] {
+    const selectedIds = selectedNodeIdsWithDescendants();
+    if (selectedIds.size === 0) return [];
+
+    const nodesById = new Map(nodes.map((node) => [node.id, node]));
+    const triggerEdges = edges.filter((edge) => edgeKind(edge) === "trigger");
+    const outgoingBySource = groupEdges(triggerEdges, "source");
+    const incomingByTarget = groupEdges(triggerEdges, "target");
+    const consumed = new Set<string>();
+    const runs: TypingRun[] = [];
+
+    for (const node of nodes) {
+      if (!selectedIds.has(node.id) || consumed.has(node.id)) {
+        continue;
+      }
+      if (node.type !== "keyNode") continue;
+
+      const run = parseTypingRun(
+        node.id,
+        selectedIds,
+        consumed,
+        nodesById,
+        outgoingBySource,
+        incomingByTarget,
+      );
+      if (!run) continue;
+
+      for (const id of run.consumedIds) {
+        consumed.add(id);
+      }
+      runs.push(run);
+    }
+
+    return runs;
+  }
+
+  function parseTypingRun(
+    startNodeId: string,
+    selectedIds: Set<string>,
+    alreadyConsumed: Set<string>,
+    nodesById: Map<string, Node>,
+    outgoingBySource: Map<string, Edge[]>,
+    incomingByTarget: Map<string, Edge[]>,
+  ): TypingRun | undefined {
+    const consumedIds = new Set<string>();
+    const textParts: string[] = [];
+    let currentNodeId: string | undefined = startNodeId;
+    let lastNodeId = startNodeId;
+
+    while (currentNodeId) {
+      if (!selectedIds.has(currentNodeId) || alreadyConsumed.has(currentNodeId) || consumedIds.has(currentNodeId)) {
+        break;
+      }
+
+      const node = nodesById.get(currentNodeId);
+      if (node?.type !== "keyNode") break;
+
+      const text = textForKeyNode(node);
+      if (text === undefined) break;
+
+      const mode = String(node.data.mode ?? "click").toLowerCase();
+      if (mode === "press" || mode === "click") {
+        textParts.push(text);
+      } else if (mode !== "release" || textParts.length === 0) {
+        break;
+      }
+
+      consumedIds.add(node.id);
+      lastNodeId = node.id;
+
+      const next = nextPrintableKeyNode(node.id, selectedIds, alreadyConsumed, consumedIds, nodesById, outgoingBySource);
+      next?.delayIds.forEach((id) => consumedIds.add(id));
+      currentNodeId = next?.nodeId;
+    }
+
+    if (textParts.length < 2) return undefined;
+    const consumedNodes = [...consumedIds].map((id) => nodesById.get(id)).filter(Boolean) as Node[];
+    if (consumedNodes.some((node) => nodeHasValueEdge(node.id))) return undefined;
+
+    const firstNode = nodesById.get(startNodeId);
+    const lastNode = nodesById.get(lastNodeId);
+    if (!firstNode || !lastNode) return undefined;
+
+    return {
+      text: textParts.join(""),
+      nodes: consumedNodes,
+      consumedIds,
+      incomingEdges: (incomingByTarget.get(firstNode.id) ?? []).filter(
+        (edge) => !consumedIds.has(edge.source),
+      ),
+      outgoingEdges: (outgoingBySource.get(lastNode.id) ?? []).filter(
+        (edge) => !consumedIds.has(edge.target),
+      ),
+    };
+  }
+
+  function nextPrintableKeyNode(
+    fromNodeId: string,
+    selectedIds: Set<string>,
+    alreadyConsumed: Set<string>,
+    currentConsumed: Set<string>,
+    nodesById: Map<string, Node>,
+    outgoingBySource: Map<string, Edge[]>,
+  ) {
+    const delayIds: string[] = [];
+    let nextNodeId = singleOutgoingTarget(fromNodeId, outgoingBySource);
+
+    while (nextNodeId) {
+      if (!selectedIds.has(nextNodeId) || alreadyConsumed.has(nextNodeId) || currentConsumed.has(nextNodeId)) {
+        return undefined;
+      }
+
+      const nextNode = nodesById.get(nextNodeId);
+      if (!nextNode) return undefined;
+      if (nextNode.type === "delayNode") {
+        delayIds.push(nextNode.id);
+        nextNodeId = singleOutgoingTarget(nextNode.id, outgoingBySource);
+        continue;
+      }
+
+      return nextNode.type === "keyNode" && textForKeyNode(nextNode) !== undefined
+        ? { nodeId: nextNode.id, delayIds }
+        : undefined;
+    }
+
+    return undefined;
+  }
+
+  function textForKeyNode(node: Node) {
+    const key = String(node.data.key ?? "");
+    if (key.length === 1) return key;
+
+    switch (key.toLowerCase()) {
+      case "space":
+        return " ";
+      case "tab":
+        return "\t";
+      case "enter":
+      case "return":
+        return "\n";
+      default:
+        return undefined;
+    }
+  }
+
+  function singleOutgoingTarget(nodeId: string, outgoingBySource: Map<string, Edge[]>) {
+    const outgoing = outgoingBySource.get(nodeId) ?? [];
+    return outgoing.length === 1 ? outgoing[0].target : undefined;
+  }
+
+  function nodeHasValueEdge(nodeId: string) {
+    return edges.some(
+      (edge) => edgeKind(edge) === "value" && (edge.source === nodeId || edge.target === nodeId),
+    );
+  }
+
+  function groupEdges(edgeList: Edge[], key: "source" | "target") {
+    const grouped = new Map<string, Edge[]>();
+    for (const edge of edgeList) {
+      const id = edge[key];
+      const group = grouped.get(id) ?? [];
+      group.push(edge);
+      grouped.set(id, group);
+    }
+    return grouped;
+  }
+
+  function addReplacementEdge(
+    replacementEdges: Edge[],
+    edgeKeys: Set<string>,
+    source: string,
+    sourceHandle: string | null,
+    target: string,
+    targetHandle: string | null,
+  ) {
+    const edgeKey = `${source}:${sourceHandle ?? ""}->${target}:${targetHandle ?? ""}`;
+    if (edgeKeys.has(edgeKey)) return;
+    edgeKeys.add(edgeKey);
+    replacementEdges.push(makeGraphEdge({ source, sourceHandle, target, targetHandle }));
+  }
+
   function copySelection() {
     const copiedIds = selectedNodeIdsWithDescendants();
     if (copiedIds.size === 0) return;
@@ -1069,6 +1339,13 @@
         Create Subflow
       </button>
       <div class="menu-separator"></div>
+      <button
+        role="menuitem"
+        disabled={!canOptimizeTypingTextSelection()}
+        onclick={optimizeTypingTextSelection}
+      >
+        Optimize Typing Text
+      </button>
       <button
         role="menuitem"
         disabled={selectedDelayCount() === 0}
