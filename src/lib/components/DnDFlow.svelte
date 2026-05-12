@@ -15,6 +15,7 @@
     type Connection,
     type OnBeforeConnect,
     type OnBeforeDelete,
+    type OnConnectEnd,
   } from "@xyflow/svelte";
 
 
@@ -45,6 +46,8 @@
 
   import { initialNodes, initialEdges } from "$lib/initial-nodes";
   import {
+    FLOW_IN_HANDLE,
+    FLOW_OUT_HANDLE,
     edgeKind,
     isValueHandle,
     makeGraphEdge,
@@ -79,12 +82,13 @@
     type RecordingMouseMode,
   } from "$lib/recording";
   import { MacroRunner } from "$lib/runner/MacroRunner";
+  import { defaultConditionExpression } from "$lib/logic";
   import {
     MODIFIER_KEYS,
     modifierShortcutPreview,
     shortcutFromKeyboardEvent,
   } from "$lib/shortcuts";
-  import { onDestroy, onMount, setContext } from "svelte";
+  import { onDestroy, onMount, setContext, tick } from "svelte";
 
   type EditorSnapshot = {
     nodes: Node[];
@@ -107,6 +111,132 @@
     delayMultiplier: number;
   };
 
+  type NodeTemplate = {
+    label: string;
+    category: string;
+    type: string;
+    data: Record<string, unknown>;
+  };
+
+  type EdgeDropMenuState = {
+    x: number;
+    y: number;
+    flowPosition: { x: number; y: number };
+    sourceNodeId: string;
+    sourceHandle: string | null;
+  };
+
+  const nodeTemplates: NodeTemplate[] = [
+    {
+      label: "Key Bind",
+      category: "Triggers",
+      type: "keyBindNode",
+      data: { title: "Key Bind", subline: "Trigger macro" },
+    },
+    {
+      label: "Type Text",
+      category: "Actions",
+      type: "typeNode",
+      data: { title: "Type Text", text: "Hello" },
+    },
+    {
+      label: "Key Press",
+      category: "Actions",
+      type: "keyNode",
+      data: { title: "Key Press", mode: "click" },
+    },
+    {
+      label: "Mouse Click",
+      category: "Actions",
+      type: "mousePressNode",
+      data: { title: "Mouse Click", button: "left" },
+    },
+    {
+      label: "Move Mouse",
+      category: "Actions",
+      type: "mouseMoveNode",
+      data: { title: "Move Mouse", x: 0, y: 0 },
+    },
+    {
+      label: "Scroll Mouse",
+      category: "Actions",
+      type: "scrollMouseNode",
+      data: { title: "Scroll Mouse", amount: 3 },
+    },
+    {
+      label: "Delay",
+      category: "Logic",
+      type: "delayNode",
+      data: { title: "Delay", delay: 1000 },
+    },
+    {
+      label: "If",
+      category: "Logic",
+      type: "conditionalNode",
+      data: { title: "If", condition: "true", conditionExpression: defaultConditionExpression },
+    },
+    {
+      label: "Repeat",
+      category: "Logic",
+      type: "repeatLoopNode",
+      data: { title: "Repeat", iterations: 3, indexVariable: "index" },
+    },
+    {
+      label: "For Each",
+      category: "Logic",
+      type: "forEachLoopNode",
+      data: { title: "For Each", items: [], itemVariable: "item", indexVariable: "index" },
+    },
+    {
+      label: "While",
+      category: "Logic",
+      type: "whileLoopNode",
+      data: { title: "While", conditionExpression: defaultConditionExpression, indexVariable: "index", maxIterations: 100 },
+    },
+    {
+      label: "Break",
+      category: "Logic",
+      type: "breakLoopNode",
+      data: { title: "Break" },
+    },
+    {
+      label: "Continue",
+      category: "Logic",
+      type: "continueLoopNode",
+      data: { title: "Continue" },
+    },
+    {
+      label: "Value",
+      category: "Variables",
+      type: "valueNode",
+      data: { title: "Value", valueType: "text", value: "" },
+    },
+    {
+      label: "Set Variable",
+      category: "Variables",
+      type: "setVariableNode",
+      data: { title: "Set Variable", variableName: "value", valueType: "number", value: 0, scope: "macro" },
+    },
+    {
+      label: "Get Variable",
+      category: "Variables",
+      type: "getVariableNode",
+      data: { title: "Get Variable", variableName: "value" },
+    },
+    {
+      label: "Update Variable",
+      category: "Variables",
+      type: "updateVariableNode",
+      data: { title: "Update Variable", variableName: "value", operation: "increment", value: 1 },
+    },
+    {
+      label: "Compare",
+      category: "Variables",
+      type: "compareNode",
+      data: { title: "Compare", conditionExpression: defaultConditionExpression },
+    },
+  ];
+
   // use $state.raw for performance as recommended by xyflow docs
   let nodes = $state.raw(initialNodes);
   let edges = $state.raw(initialEdges);
@@ -119,6 +249,10 @@
   let redoStack = $state.raw([] as EditorSnapshot[]);
   let copiedGraph = $state.raw<GraphClipboard | undefined>();
   let contextMenu = $state<ContextMenuState | undefined>();
+  let edgeDropMenu = $state<EdgeDropMenuState | undefined>();
+  let edgeDropQuery = $state("");
+  let edgeDropSearchInput = $state<HTMLInputElement | undefined>();
+  let ignoreNextPaneClick = false;
   let pasteIndex = 0;
   let applyingHistory = false;
   let historyTimer: ReturnType<typeof setTimeout> | undefined;
@@ -305,6 +439,32 @@
     return makeGraphEdge(connection);
   };
 
+  const onConnectEnd: OnConnectEnd = (event, connectionState) => {
+    if (connectionState.isValid) return;
+
+    const sourceNodeId = connectionState.fromNode?.id;
+    const sourceHandle = connectionState.fromHandle?.id ?? null;
+    if (!sourceNodeId || isValueHandle(sourceHandle)) {
+      return;
+    }
+
+    const position = pointerClientPosition(event);
+    if (!position) return;
+
+    edgeDropQuery = "";
+    edgeDropMenu = {
+      x: position.x,
+      y: position.y,
+      flowPosition: screenToFlowPosition(position),
+      sourceNodeId,
+      sourceHandle,
+    };
+    ignoreNextPaneClick = true;
+    contextMenu = undefined;
+    showRecordOptions = false;
+    void tick().then(() => edgeDropSearchInput?.focus());
+  };
+
   const onBeforeDelete: OnBeforeDelete = async ({ nodes: deletedNodes }) => {
     const deletedIds = new Set(deletedNodes.map((node) => node.id));
     if (deletedIds.size === 0) return true;
@@ -465,6 +625,8 @@
 
   function closeContextMenu() {
     contextMenu = undefined;
+    edgeDropMenu = undefined;
+    edgeDropQuery = "";
     showRecordOptions = false;
   }
 
@@ -1117,6 +1279,15 @@
     }
   }
 
+  function pointerClientPosition(event: MouseEvent | TouchEvent) {
+    if ("changedTouches" in event) {
+      const touch = event.changedTouches[0];
+      return touch ? { x: touch.clientX, y: touch.clientY } : undefined;
+    }
+
+    return { x: event.clientX, y: event.clientY };
+  }
+
   function nodeDimension(node: (typeof nodes)[number], property: "width" | "height") {
     const measured = node as (typeof nodes)[number] & {
       measured?: {
@@ -1153,22 +1324,14 @@
     });
   }
 
-  function onDrop(event: DragEvent) {
-    event.preventDefault();
-    if (!event.dataTransfer) return;
-
-    const data = event.dataTransfer.getData("application/svelteflow");
-    if (!data) return;
-
-    const { type, data: nodeData } = JSON.parse(data);
-
-    const position = screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
+  function createNodeAtPosition(
+    type: string,
+    nodeData: Record<string, unknown>,
+    position: { x: number; y: number },
+  ) {
     const parentSubflow = findSubflowGroupAt(position);
 
-    const newNode = {
+    return {
       id: crypto.randomUUID(),
       type,
       position: parentSubflow
@@ -1182,8 +1345,62 @@
       parentId: parentSubflow?.id,
       extent: parentSubflow ? ("parent" as const) : undefined,
     };
+  }
+
+  function onDrop(event: DragEvent) {
+    event.preventDefault();
+    if (!event.dataTransfer) return;
+
+    const data = event.dataTransfer.getData("application/svelteflow");
+    if (!data) return;
+
+    const { type, data: nodeData } = JSON.parse(data);
+    const position = screenToFlowPosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
+    const newNode = createNodeAtPosition(type, nodeData, position);
 
     nodes = [...nodes, newNode];
+  }
+
+  function filteredEdgeDropTemplates() {
+    const query = edgeDropQuery.trim().toLowerCase();
+    if (!query) return nodeTemplates;
+
+    return nodeTemplates.filter((template) =>
+      `${template.label} ${template.category}`.toLowerCase().includes(query),
+    );
+  }
+
+  function closeEdgeDropMenu() {
+    edgeDropMenu = undefined;
+    edgeDropQuery = "";
+  }
+
+  function createNodeFromEdgeDrop(template: NodeTemplate) {
+    if (!edgeDropMenu) return;
+
+    const newNode = createNodeAtPosition(
+      template.type,
+      cloneData(template.data),
+      edgeDropMenu.flowPosition,
+    );
+    const newEdge = makeGraphEdge({
+      source: edgeDropMenu.sourceNodeId,
+      sourceHandle: edgeDropMenu.sourceHandle ?? FLOW_OUT_HANDLE,
+      target: newNode.id,
+      targetHandle: FLOW_IN_HANDLE,
+    });
+
+    const selectedNewNode = { ...newNode, selected: true };
+    nodes = [
+      ...nodes.map((node) => ({ ...node, selected: false })),
+      selectedNewNode,
+    ];
+    edges = [...edges.map((edge) => ({ ...edge, selected: false })), newEdge];
+    selectedNodes = [selectedNewNode];
+    closeEdgeDropMenu();
   }
 
   function handleSelectionChange(selection: { nodes: typeof nodes; edges: typeof edges }) {
@@ -1212,6 +1429,15 @@
 
   function handlePaneContextMenu({ event }: { event: MouseEvent }) {
     openContextMenu(event, "pane");
+  }
+
+  function handlePaneClick() {
+    if (ignoreNextPaneClick) {
+      ignoreNextPaneClick = false;
+      return;
+    }
+
+    closeContextMenu();
   }
 
   function handleSelectionContextMenu({ event }: { event: MouseEvent; nodes: Node[] }) {
@@ -1279,11 +1505,12 @@
     {isValidConnection}
     onbeforeconnect={onBeforeConnect}
     onbeforedelete={onBeforeDelete}
+    onconnectend={onConnectEnd}
     onselectionchange={handleSelectionChange}
     onpanecontextmenu={handlePaneContextMenu}
     onselectioncontextmenu={handleSelectionContextMenu}
     onnodecontextmenu={handleNodeContextMenu}
-    onpaneclick={closeContextMenu}
+    onpaneclick={handlePaneClick}
     fitView
     colorMode="dark"
     proOptions={{ hideAttribution: true }}
@@ -1464,6 +1691,43 @@
       >
         Delete
       </button>
+    </div>
+  {/if}
+
+  {#if edgeDropMenu}
+    <div
+      class="edge-drop-menu"
+      style={`left: ${edgeDropMenu.x}px; top: ${edgeDropMenu.y}px;`}
+      role="dialog"
+      aria-label="Add node on edge drop"
+      tabindex="-1"
+      oncontextmenu={(event) => event.preventDefault()}
+    >
+      <input
+        class="edge-drop-search"
+        type="text"
+        placeholder="Search components"
+        bind:value={edgeDropQuery}
+        bind:this={edgeDropSearchInput}
+        onkeydown={(event) => {
+          if (event.key === "Escape") {
+            closeEdgeDropMenu();
+          } else if (event.key === "Enter") {
+            const [firstTemplate] = filteredEdgeDropTemplates();
+            if (firstTemplate) createNodeFromEdgeDrop(firstTemplate);
+          }
+        }}
+      />
+      <div class="edge-drop-list">
+        {#each filteredEdgeDropTemplates() as template (template.type)}
+          <button onclick={() => createNodeFromEdgeDrop(template)}>
+            <span>{template.label}</span>
+            <small>{template.category}</small>
+          </button>
+        {:else}
+          <div class="edge-drop-empty">No components found.</div>
+        {/each}
+      </div>
     </div>
   {/if}
 
@@ -1714,6 +1978,90 @@
     background: #303030;
     height: 1px;
     margin: 0.15rem 0;
+  }
+
+  .edge-drop-menu {
+    background: rgba(18, 18, 18, 0.98);
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.36);
+    display: grid;
+    gap: 0.35rem;
+    max-height: min(360px, calc(100vh - 2rem));
+    min-width: 220px;
+    padding: 0.4rem;
+    position: fixed;
+    transform: translate(-0.35rem, -0.35rem);
+    z-index: 25;
+  }
+
+  .edge-drop-search {
+    background: #232426;
+    border: 1px solid #414141;
+    border-radius: 4px;
+    color: #f1f1f1;
+    font: inherit;
+    font-size: 0.8rem;
+    outline: none;
+    padding: 0.42rem 0.5rem;
+  }
+
+  .edge-drop-search:focus {
+    border-color: #2a8af6;
+    box-shadow: 0 0 0 1px rgba(42, 138, 246, 0.35);
+  }
+
+  .edge-drop-list {
+    display: grid;
+    gap: 0.15rem;
+    max-height: 300px;
+    overflow: auto;
+    padding-right: 0.1rem;
+    scrollbar-color: #4a4a4a #171717;
+    scrollbar-width: thin;
+  }
+
+  .edge-drop-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .edge-drop-list::-webkit-scrollbar-track {
+    background: #171717;
+  }
+
+  .edge-drop-list::-webkit-scrollbar-thumb {
+    background: #3a3b3d;
+    border: 2px solid #171717;
+    border-radius: 999px;
+  }
+
+  .edge-drop-list button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: #f1f1f1;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: 0.75rem;
+    justify-content: space-between;
+    padding: 0.42rem 0.5rem;
+    text-align: left;
+  }
+
+  .edge-drop-list button:hover {
+    background: #2c2d2f;
+  }
+
+  .edge-drop-list small,
+  .edge-drop-empty {
+    color: #888;
+    font-size: 0.72rem;
+  }
+
+  .edge-drop-empty {
+    padding: 0.45rem 0.5rem;
   }
 
   .recording-dialog-backdrop {
