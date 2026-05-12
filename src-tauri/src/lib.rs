@@ -118,10 +118,10 @@ pub fn run() {
                 let qt_csd =
                     std::env::var("QT_WAYLAND_DISABLE_WINDOWDECORATION").unwrap_or_default();
 
-                if gtk_csd == "0" || qt_csd == "1" {
-                    if let Some(window) = app.get_webview_window("main") {
-                        window.set_decorations(false).unwrap();
-                    }
+                if (gtk_csd == "0" || qt_csd == "1")
+                    && let Some(window) = app.get_webview_window("main")
+                {
+                    window.set_decorations(false).unwrap();
                 }
             }
 
