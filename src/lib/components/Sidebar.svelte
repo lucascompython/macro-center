@@ -2,6 +2,8 @@
 	import { ActionMode, CoordinateMode, Axis, MouseButton } from "$lib/types";
 	import { defaultConditionExpression } from "$lib/logic";
 
+	let collapsed = $state(false);
+
 	function onDragStart(event: DragEvent, nodeType: string, data: any = {}) {
 		if (!event.dataTransfer) return;
 
@@ -11,28 +13,42 @@
 	}
 </script>
 
-<aside class="sidebar">
+<aside class="sidebar" class:collapsed>
 	<div class="header">
-		<h2>Components</h2>
-		<p class="subtitle">Drag to add</p>
-	</div>
-
-	<div class="category">
-		<h3>Triggers</h3>
+		{#if !collapsed}
+			<div>
+				<h2>Components</h2>
+				<p class="subtitle">Drag to add</p>
+			</div>
+		{/if}
 		<button
-			class="dndnode trigger"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "keyBindNode", {
-					title: "Key Bind",
-					subline: "Trigger macro",
-				})}
+			class="collapse-btn"
+			aria-label={collapsed ? "Expand components sidebar" : "Collapse components sidebar"}
+			title={collapsed ? "Expand components" : "Collapse components"}
+			onclick={() => (collapsed = !collapsed)}
 		>
-			Key Bind
+			{collapsed ? ">" : "<"}
 		</button>
 	</div>
 
-	<div class="category">
+	{#if !collapsed}
+		<div class="content">
+			<div class="category">
+				<h3>Triggers</h3>
+				<button
+					class="dndnode trigger"
+					draggable="true"
+					ondragstart={(event) =>
+						onDragStart(event, "keyBindNode", {
+							title: "Key Bind",
+							subline: "Trigger macro",
+						})}
+				>
+					Key Bind
+				</button>
+			</div>
+
+			<div class="category">
 		<h3>Actions</h3>
 		<button
 			class="dndnode action"
@@ -235,6 +251,8 @@
 			Compare
 		</button>
 	</div>
+		</div>
+	{/if}
 </aside>
 
 <style>
@@ -244,14 +262,84 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		box-sizing: border-box;
 		padding: 1rem;
 		width: 250px;
 		font-family: "Inter", sans-serif;
 		overflow-y: auto;
+		scrollbar-color: #4a4a4a #171717;
+		scrollbar-width: thin;
+		transition:
+			width 0.18s ease,
+			padding 0.18s ease;
+	}
+
+	.sidebar::-webkit-scrollbar {
+		width: 10px;
+	}
+
+	.sidebar::-webkit-scrollbar-track {
+		background: #171717;
+		border-left: 1px solid #242424;
+	}
+
+	.sidebar::-webkit-scrollbar-thumb {
+		background: #3a3b3d;
+		border: 2px solid #171717;
+		border-radius: 999px;
+	}
+
+	.sidebar::-webkit-scrollbar-thumb:hover {
+		background: #555;
+	}
+
+	.sidebar.collapsed {
+		border-right: 0;
+		overflow: visible;
+		padding: 0;
+		width: 0;
 	}
 
 	.header {
+		align-items: center;
+		display: flex;
+		justify-content: space-between;
 		margin-bottom: 1.5rem;
+	}
+
+	.sidebar.collapsed .header {
+		left: 0.75rem;
+		margin-bottom: 0;
+		position: absolute;
+		top: 0.75rem;
+		z-index: 30;
+	}
+
+	.content {
+		min-height: 0;
+	}
+
+	.collapse-btn {
+		align-items: center;
+		background: #242528;
+		border: 1px solid #3e3e3e;
+		border-radius: 4px;
+		color: #d8d8d8;
+		cursor: pointer;
+		display: flex;
+		flex: 0 0 28px;
+		font: inherit;
+		font-size: 0.9rem;
+		height: 28px;
+		justify-content: center;
+		padding: 0;
+		width: 28px;
+	}
+
+	.collapse-btn:hover {
+		background: #303136;
+		border-color: #555;
+		color: #fff;
 	}
 
 	h2 {
