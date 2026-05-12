@@ -320,6 +320,7 @@
   let isRunning = $state(false);
   let isRecording = $state(false);
   let recordingMode = $state<RecordingMouseMode>("movesBeforeClicks");
+  let showRecordOptions = $state(false);
   let recordingError = $state("");
   let pendingRecordedMacro = $state<RecordedMacro | undefined>();
   let recordedShortcut = $state("");
@@ -347,8 +348,14 @@
     if (isRecording) {
       await stopRecording();
     } else {
-      await startRecording();
+      showRecordOptions = !showRecordOptions;
     }
+  }
+
+  async function startRecordingWithMode(mode: RecordingMouseMode) {
+    recordingMode = mode;
+    showRecordOptions = false;
+    await startRecording();
   }
 
   async function startRecording() {
@@ -458,6 +465,7 @@
 
   function closeContextMenu() {
     contextMenu = undefined;
+    showRecordOptions = false;
   }
 
   function isEditingTarget(target: EventTarget | null) {
@@ -1306,23 +1314,34 @@
       <button class="panel-btn" disabled={redoStack.length === 0} onclick={redo}>
         Redo
       </button>
-      <select
-        class="panel-select"
-        bind:value={recordingMode}
-        disabled={isRecording}
-        aria-label="Recording mode"
-      >
-        <option value="movesBeforeClicks">Clicks only</option>
-        <option value="allMoves">All movement</option>
-      </select>
-      <button
-        class="panel-btn record-btn"
-        class:recording={isRecording}
-        disabled={isRunning}
-        onclick={toggleRecording}
-      >
-        {isRecording ? "Stop Recording" : "Record"}
-      </button>
+      <div class="record-dropdown">
+        <button
+          class="panel-btn record-btn"
+          class:recording={isRecording}
+          disabled={isRunning}
+          onclick={toggleRecording}
+          aria-haspopup="menu"
+          aria-expanded={showRecordOptions}
+        >
+          {isRecording ? "Stop Recording" : "Record"}
+        </button>
+        {#if showRecordOptions && !isRecording}
+          <div class="record-menu" role="menu">
+            <button
+              role="menuitem"
+              onclick={() => startRecordingWithMode("movesBeforeClicks")}
+            >
+              Clicks Only
+            </button>
+            <button
+              role="menuitem"
+              onclick={() => startRecordingWithMode("allMoves")}
+            >
+              All movement
+            </button>
+          </div>
+        {/if}
+      </div>
       <button class="panel-btn" disabled={isRecording} onclick={toggleExecution}>
         {isRunning ? "Stop" : "Run"}
       </button>
@@ -1532,27 +1551,46 @@
     color: #fff;
   }
 
-  .panel-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
+  .record-dropdown {
+    display: inline-block;
+    position: relative;
   }
 
-  .panel-select {
-    background: #232426;
+  .record-menu {
+    background: rgba(18, 18, 18, 0.98);
     border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    display: grid;
+    gap: 0.2rem;
+    min-width: 132px;
+    padding: 0.25rem;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 20;
+  }
+
+  .record-menu button {
+    background: transparent;
+    border: 0;
     border-radius: 4px;
     color: #e0e0e0;
     cursor: pointer;
+    font: inherit;
     font-size: 12px;
-    font-weight: 500;
-    margin-left: 8px;
-    min-height: 29px;
-    padding: 5px 28px 5px 8px;
+    padding: 0.4rem 0.55rem;
+    text-align: left;
   }
 
-  .panel-select:disabled {
+  .record-menu button:hover {
+    background: #2c2d2f;
+    color: #fff;
+  }
+
+  .panel-btn:disabled {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: 0.45;
   }
 
   .recording-error {
