@@ -112,6 +112,19 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
+            #[cfg(target_os = "linux")]
+            {
+                let gtk_csd = std::env::var("GTK_CSD").unwrap_or_default();
+                let qt_csd =
+                    std::env::var("QT_WAYLAND_DISABLE_WINDOWDECORATION").unwrap_or_default();
+
+                if gtk_csd == "0" || qt_csd == "1" {
+                    if let Some(window) = app.get_webview_window("main") {
+                        window.set_decorations(false).unwrap();
+                    }
+                }
+            }
+
             let simulator = InputSimulator::new().map_err(|e| e.to_string())?;
             app.manage(SimulatorState {
                 simulator: Mutex::new(simulator),
