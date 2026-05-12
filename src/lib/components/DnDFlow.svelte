@@ -14,6 +14,7 @@
     type IsValidConnection,
     type Connection,
     type OnBeforeConnect,
+    type OnBeforeDelete,
   } from "@xyflow/svelte";
 
 
@@ -302,6 +303,14 @@
   const onBeforeConnect: OnBeforeConnect = (connection: Connection) => {
     if (!isValidConnection(connection)) return false;
     return makeGraphEdge(connection);
+  };
+
+  const onBeforeDelete: OnBeforeDelete = async ({ nodes: deletedNodes }) => {
+    const deletedIds = new Set(deletedNodes.map((node) => node.id));
+    if (deletedIds.size === 0) return true;
+
+    deleteNodesWithBypass(deletedIds);
+    return true;
   };
 
   // DnD Hook
@@ -937,10 +946,57 @@
     const selectedIds = selectedNodeIdsWithDescendants();
     if (selectedIds.size === 0) return;
 
-    nodes = nodes.filter((node) => !selectedIds.has(node.id));
-    edges = edges.filter((edge) => !selectedIds.has(edge.source) && !selectedIds.has(edge.target));
+    deleteNodesWithBypass(selectedIds);
     selectedNodes = [];
     closeContextMenu();
+  }
+
+  function deleteNodesWithBypass(deletedIds: Set<string>) {
+    const nodeOrder = nodes.filter((node) => deletedIds.has(node.id));
+    let remainingNodes = [...nodes];
+    let nextEdges = [...edges];
+
+    for (const deletedNode of nodeOrder) {
+      const incomingEdges = nextEdges.filter(
+        (edge) => edgeKind(edge) === "trigger" && edge.target === deletedNode.id,
+      );
+      const outgoingEdges = nextEdges.filter(
+        (edge) => edgeKind(edge) === "trigger" && edge.source === deletedNode.id,
+      );
+      const connectedEdges = nextEdges.filter(
+        (edge) => edge.source === deletedNode.id || edge.target === deletedNode.id,
+      );
+
+      nextEdges = nextEdges.filter((edge) => !connectedEdges.includes(edge));
+      remainingNodes = remainingNodes.filter((node) => node.id !== deletedNode.id);
+
+      const edgeKeys = new Set(
+        nextEdges.map(
+          (edge) =>
+            `${edge.source}:${edge.sourceHandle ?? ""}->${edge.target}:${edge.targetHandle ?? ""}`,
+        ),
+      );
+
+      for (const incomingEdge of incomingEdges) {
+        for (const outgoingEdge of outgoingEdges) {
+          if (incomingEdge.source === outgoingEdge.target) {
+            continue;
+          }
+
+          addReplacementEdge(
+            nextEdges,
+            edgeKeys,
+            incomingEdge.source,
+            incomingEdge.sourceHandle ?? null,
+            outgoingEdge.target,
+            outgoingEdge.targetHandle ?? null,
+          );
+        }
+      }
+    }
+
+    nodes = remainingNodes;
+    edges = nextEdges;
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -1214,6 +1270,7 @@
     {defaultEdgeOptions}
     {isValidConnection}
     onbeforeconnect={onBeforeConnect}
+    onbeforedelete={onBeforeDelete}
     onselectionchange={handleSelectionChange}
     onpanecontextmenu={handlePaneContextMenu}
     onselectioncontextmenu={handleSelectionContextMenu}
