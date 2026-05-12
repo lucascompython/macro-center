@@ -44,6 +44,7 @@
 
   import { initialNodes, initialEdges } from "$lib/initial-nodes";
   import {
+    edgeKind,
     isValueHandle,
     makeGraphEdge,
   } from "$lib/graph";
@@ -101,6 +102,8 @@
     y: number;
     flowPosition: { x: number; y: number };
     target: "pane" | "node" | "selection";
+    delayBaselines: Record<string, number>;
+    delayMultiplier: number;
   };
 
   // use $state.raw for performance as recommended by xyflow docs
@@ -472,6 +475,113 @@
     return copiedIds;
   }
 
+  function selectedDelayBaselines() {
+    const selectedIds = selectedNodeIdsWithDescendants();
+    const baselines: Record<string, number> = {};
+
+    for (const node of nodes) {
+      if (selectedIds.has(node.id) && node.type === "delayNode") {
+        baselines[node.id] = Math.max(0, Number(node.data.delay ?? 1000) || 0);
+      }
+    }
+
+    return baselines;
+  }
+
+  function selectedDelayCount() {
+    return Object.keys(contextMenu?.delayBaselines ?? {}).length;
+  }
+
+  function deleteSelectedDelayNodes() {
+    const delayIds = new Set(Object.keys(contextMenu?.delayBaselines ?? {}));
+    if (delayIds.size === 0) return;
+
+    const triggerEdges = edges.filter((edge) => edgeKind(edge) === "trigger");
+    const outgoingBySource = new Map<string, Edge[]>();
+    const keptEdges = edges.filter((edge) => !delayIds.has(edge.source) && !delayIds.has(edge.target));
+    const edgeKeys = new Set(
+      keptEdges.map(
+        (edge) =>
+          `${edge.source}:${edge.sourceHandle ?? ""}->${edge.target}:${edge.targetHandle ?? ""}`,
+      ),
+    );
+    const bypassEdges: Edge[] = [];
+
+    for (const edge of triggerEdges) {
+      const sourceEdges = outgoingBySource.get(edge.source) ?? [];
+      sourceEdges.push(edge);
+      outgoingBySource.set(edge.source, sourceEdges);
+    }
+
+    function reachableOutputs(nodeId: string, visited = new Set<string>()): Edge[] {
+      if (visited.has(nodeId)) return [];
+      visited.add(nodeId);
+
+      const outgoing = outgoingBySource.get(nodeId) ?? [];
+      const outputs: Edge[] = [];
+
+      for (const edge of outgoing) {
+        if (delayIds.has(edge.target)) {
+          outputs.push(...reachableOutputs(edge.target, visited));
+        } else {
+          outputs.push(edge);
+        }
+      }
+
+      return outputs;
+    }
+
+    for (const incomingEdge of triggerEdges) {
+      if (!delayIds.has(incomingEdge.target) || delayIds.has(incomingEdge.source)) continue;
+
+      for (const outgoingEdge of reachableOutputs(incomingEdge.target)) {
+        if (outgoingEdge.target === incomingEdge.source) continue;
+
+        const edgeKey = `${incomingEdge.source}:${incomingEdge.sourceHandle ?? ""}->${outgoingEdge.target}:${outgoingEdge.targetHandle ?? ""}`;
+        if (edgeKeys.has(edgeKey)) continue;
+        edgeKeys.add(edgeKey);
+
+        bypassEdges.push(
+          makeGraphEdge({
+            source: incomingEdge.source,
+            sourceHandle: incomingEdge.sourceHandle ?? null,
+            target: outgoingEdge.target,
+            targetHandle: outgoingEdge.targetHandle ?? null,
+          }),
+        );
+      }
+    }
+
+    nodes = nodes.filter((node) => !delayIds.has(node.id));
+    edges = [...keptEdges, ...bypassEdges];
+    selectedNodes = selectedNodes.filter((node) => !delayIds.has(node.id));
+    closeContextMenu();
+  }
+
+  function applyDelayMultiplier(rawMultiplier: number) {
+    if (!contextMenu) return;
+
+    const multiplier = Number(rawMultiplier) || 0;
+    const baselines = contextMenu.delayBaselines;
+    contextMenu = {
+      ...contextMenu,
+      delayMultiplier: multiplier,
+    };
+
+    nodes = nodes.map((node) => {
+      const baseline = baselines[node.id];
+      if (baseline === undefined || node.type !== "delayNode") return node;
+
+      return {
+        ...node,
+        data: {
+          ...(node.data ?? {}),
+          delay: Math.round(baseline * multiplier),
+        },
+      };
+    });
+  }
+
   function copySelection() {
     const copiedIds = selectedNodeIdsWithDescendants();
     if (copiedIds.size === 0) return;
@@ -761,6 +871,8 @@
         y: event.clientY,
       }),
       target,
+      delayBaselines: selectedDelayBaselines(),
+      delayMultiplier: 1,
     };
   }
 
@@ -956,6 +1068,40 @@
       >
         Create Subflow
       </button>
+      <div class="menu-separator"></div>
+      <button
+        role="menuitem"
+        disabled={selectedDelayCount() === 0}
+        onclick={deleteSelectedDelayNodes}
+      >
+        Delete Delay Nodes
+      </button>
+      <div
+        class="delay-multiplier"
+        class:disabled={selectedDelayCount() === 0}
+        role="group"
+        aria-label="Delay multiplier"
+      >
+        <div class="delay-multiplier-header">
+          <span>Delay Multiplier</span>
+          <span>{Math.round(contextMenu.delayMultiplier * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="2"
+          step="0.05"
+          value={contextMenu.delayMultiplier}
+          disabled={selectedDelayCount() === 0}
+          aria-label="Scale selected delay values"
+          oninput={(event) => applyDelayMultiplier(Number(event.currentTarget.value))}
+        />
+        <div class="delay-multiplier-scale">
+          <span>0%</span>
+          <span>100%</span>
+          <span>200%</span>
+        </div>
+      </div>
       <div class="menu-separator"></div>
       <button
         role="menuitem"
@@ -1156,6 +1302,40 @@
 
   .context-menu button.danger {
     color: #ff8aa8;
+  }
+
+  .delay-multiplier {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.35rem 0.5rem 0.4rem;
+  }
+
+  .delay-multiplier.disabled {
+    opacity: 0.45;
+  }
+
+  .delay-multiplier-header,
+  .delay-multiplier-scale {
+    align-items: center;
+    color: #b8b8b8;
+    display: flex;
+    font-size: 0.72rem;
+    justify-content: space-between;
+  }
+
+  .delay-multiplier-header span:first-child {
+    color: #f1f1f1;
+  }
+
+  .delay-multiplier input[type="range"] {
+    accent-color: #a853ba;
+    cursor: pointer;
+    margin: 0;
+    width: 100%;
+  }
+
+  .delay-multiplier input[type="range"]:disabled {
+    cursor: not-allowed;
   }
 
   .menu-separator {
