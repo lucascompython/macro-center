@@ -36,7 +36,7 @@
       nodeId={id}
       inputName="items"
       value={valueToInput(data.items ?? [])}
-      placeholder="["a","b"]"
+      placeholder="['a','b']"
       onChange={handleItemsInput}
     />
   </div>
