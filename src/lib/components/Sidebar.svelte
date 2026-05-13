@@ -1,13 +1,17 @@
 <script lang="ts">
-	import { ActionMode, CoordinateMode, Axis, MouseButton } from "$lib/types";
-	import { defaultConditionExpression } from "$lib/logic";
+	import {
+		nodeTemplateCategories,
+		nodeTemplateCategoryClass,
+		nodeTemplatesForCategory,
+		type NodeTemplate,
+	} from "$lib/node-palette";
 
 	let collapsed = $state(false);
 
-	function onDragStart(event: DragEvent, nodeType: string, data: any = {}) {
+	function onDragStart(event: DragEvent, template: NodeTemplate) {
 		if (!event.dataTransfer) return;
 
-		const payload = JSON.stringify({ type: nodeType, data });
+		const payload = JSON.stringify({ type: template.type, data: template.data });
 		event.dataTransfer.setData("application/svelteflow", payload);
 		event.dataTransfer.effectAllowed = "move";
 	}
@@ -33,224 +37,20 @@
 
 	{#if !collapsed}
 		<div class="content">
-			<div class="category">
-				<h3>Triggers</h3>
-				<button
-					class="dndnode trigger"
-					draggable="true"
-					ondragstart={(event) =>
-						onDragStart(event, "keyBindNode", {
-							title: "Key Bind",
-							subline: "Trigger macro",
-						})}
-				>
-					Key Bind
-				</button>
-			</div>
-
-			<div class="category">
-		<h3>Actions</h3>
-		<button
-			class="dndnode action"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "typeNode", {
-					title: "Type Text",
-					text: "Hello",
-				})}
-		>
-			Type Text
-		</button>
-		<button
-			class="dndnode action"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "keyNode", {
-					title: "Key Press",
-					mode: ActionMode.CLICK,
-				})}
-		>
-			Key Press
-		</button>
-		<button
-			class="dndnode action"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "mousePressNode", {
-					title: "Mouse Click",
-					button: MouseButton.LEFT,
-				})}
-		>
-			Mouse Click
-		</button>
-		<button
-			class="dndnode action"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "mouseMoveNode", {
-					title: "Move Mouse",
-					x: 0,
-					y: 0,
-				})}
-		>
-			Move Mouse
-		</button>
-		<button
-			class="dndnode action"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "scrollMouseNode", {
-					title: "Scroll Mouse",
-					amount: 3,
-				})}
-		>
-			Scroll Mouse
-		</button>
-	</div>
-
-	<div class="category">
-		<h3>Logic</h3>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "delayNode", {
-					title: "Delay",
-					delay: 1000,
-				})}
-		>
-			Delay
-		</button>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "conditionalNode", {
-					title: "If",
-					condition: "true",
-					conditionExpression: defaultConditionExpression,
-				})}
-		>
-			If
-		</button>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "repeatLoopNode", {
-					title: "Repeat",
-					iterations: 3,
-					indexVariable: "index",
-				})}
-		>
-			Repeat
-		</button>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "forEachLoopNode", {
-					title: "For Each",
-					items: [],
-					itemVariable: "item",
-					indexVariable: "index",
-				})}
-		>
-			For Each
-		</button>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "whileLoopNode", {
-					title: "While",
-					conditionExpression: defaultConditionExpression,
-					indexVariable: "index",
-					maxIterations: 100,
-				})}
-		>
-			While
-		</button>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) => onDragStart(event, "breakLoopNode", { title: "Break" })}
-		>
-			Break
-		</button>
-		<button
-			class="dndnode logic"
-			draggable="true"
-			ondragstart={(event) => onDragStart(event, "continueLoopNode", { title: "Continue" })}
-		>
-			Continue
-		</button>
-	</div>
-
-	<div class="category">
-		<h3>Variables</h3>
-		<button
-			class="dndnode variable"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "valueNode", {
-					title: "Value",
-					valueType: "text",
-					value: "",
-				})}
-		>
-			Value
-		</button>
-		<button
-			class="dndnode variable"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "setVariableNode", {
-					title: "Set Variable",
-					variableName: "value",
-					valueType: "number",
-					value: 0,
-					scope: "macro",
-				})}
-		>
-			Set Variable
-		</button>
-		<button
-			class="dndnode variable"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "getVariableNode", {
-					title: "Get Variable",
-					variableName: "value",
-				})}
-		>
-			Get Variable
-		</button>
-		<button
-			class="dndnode variable"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "updateVariableNode", {
-					title: "Update Variable",
-					variableName: "value",
-					operation: "increment",
-					value: 1,
-				})}
-		>
-			Update Variable
-		</button>
-		<button
-			class="dndnode variable"
-			draggable="true"
-			ondragstart={(event) =>
-				onDragStart(event, "compareNode", {
-					title: "Compare",
-					conditionExpression: defaultConditionExpression,
-				})}
-		>
-			Compare
-		</button>
-	</div>
+			{#each nodeTemplateCategories as category}
+				<div class="category">
+					<h3>{category}</h3>
+					{#each nodeTemplatesForCategory(category) as template (template.type)}
+						<button
+							class={`dndnode ${nodeTemplateCategoryClass(template.category)}`}
+							draggable="true"
+							ondragstart={(event) => onDragStart(event, template)}
+						>
+							{template.label}
+						</button>
+					{/each}
+				</div>
+			{/each}
 		</div>
 	{/if}
 </aside>
