@@ -25,29 +25,20 @@ fn simulate_type_text(state: tauri::State<SimulatorState>, text: String) -> Resu
 fn simulate_key_action(
     state: tauri::State<SimulatorState>,
     key: String,
-    mode: String,
+    mode: ActionMode,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let action_mode: ActionMode = mode
-        .parse()
-        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
-    sim.key_action(&key, action_mode).map_err(|e| e.to_string())
+    sim.key_action(&key, mode).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn simulate_mouse_click(
     state: tauri::State<SimulatorState>,
-    button: String,
-    mode: String,
+    button: MouseButton,
+    mode: ActionMode,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let btn: MouseButton = button
-        .parse()
-        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
-    let action_mode: ActionMode = mode
-        .parse()
-        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
-    sim.mouse_click(btn, action_mode).map_err(|e| e.to_string())
+    sim.mouse_click(button, mode).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -55,33 +46,27 @@ fn simulate_mouse_move(
     state: tauri::State<SimulatorState>,
     x: i32,
     y: i32,
-    mode: String,
+    mode: CoordinateMode,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let coord_mode: CoordinateMode = mode
-        .parse()
-        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
-    sim.mouse_move(x, y, coord_mode).map_err(|e| e.to_string())
+    sim.mouse_move(x, y, mode).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn simulate_scroll(
     state: tauri::State<SimulatorState>,
-    axis: String,
+    axis: ScrollAxis,
     amount: i32,
 ) -> Result<(), String> {
     let mut sim = state.simulator.lock().map_err(|e| e.to_string())?;
-    let scroll_axis: ScrollAxis = axis
-        .parse()
-        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
-    sim.scroll(scroll_axis, amount).map_err(|e| e.to_string())
+    sim.scroll(axis, amount).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn start_macro_recording(state: tauri::State<RecorderState>, mode: String) -> Result<(), String> {
-    let mode: RecordingMouseMode = mode
-        .parse()
-        .map_err(|e: libmacrocenter::error::MacroCenterError| e.to_string())?;
+fn start_macro_recording(
+    state: tauri::State<RecorderState>,
+    mode: RecordingMouseMode,
+) -> Result<(), String> {
     state
         .recorder
         .start_recording(mode)

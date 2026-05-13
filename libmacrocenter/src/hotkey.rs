@@ -87,10 +87,10 @@ impl TauriGlobalHotkey {
     }
 
     pub fn unregister_all(&mut self) -> Result<()> {
-        let hotkeys: Vec<HotKey> = self.registered.drain().map(|(_, v)| v).collect();
-        for hotkey in hotkeys {
-            // TODO: Probably should handle errors here
-            self.manager.unregister(hotkey).unwrap();
+        for (_, hotkey) in self.registered.drain() {
+            self.manager
+                .unregister(hotkey)
+                .map_err(|e| MacroCenterError::HotkeyError(e.to_string()))?;
         }
         Ok(())
     }
@@ -188,9 +188,7 @@ impl HotKeyBackend for TauriGlobalHotkey {
 ///
 /// Supported modifiers: `Ctrl`/`Control`, `Shift`, `Alt`, `Super`/`Meta`/`Win`/`Cmd`
 fn parse_hotkey(s: &str) -> Result<HotKey> {
-    let parts: Vec<&str> = s.split('+').map(|p| p.trim()).collect();
-
-    if parts.is_empty() {
+    if s.trim().is_empty() {
         return Err(MacroCenterError::ParseError(
             "Empty hotkey string".to_string(),
         ));
@@ -199,8 +197,10 @@ fn parse_hotkey(s: &str) -> Result<HotKey> {
     let mut modifiers = Modifiers::empty();
     let mut key_part = None;
 
-    for part in &parts {
-        match part.to_lowercase().as_str() {
+    let s = s.to_lowercase();
+    for raw_part in s.split('+') {
+        let part = raw_part.trim();
+        match part {
             "ctrl" | "control" => modifiers |= Modifiers::CONTROL,
             "shift" => modifiers |= Modifiers::SHIFT,
             "alt" => modifiers |= Modifiers::ALT,
@@ -211,7 +211,7 @@ fn parse_hotkey(s: &str) -> Result<HotKey> {
                         "Multiple key codes in hotkey string: '{s}'"
                     )));
                 }
-                key_part = Some(*part);
+                key_part = Some(part);
             }
         }
     }
@@ -220,7 +220,7 @@ fn parse_hotkey(s: &str) -> Result<HotKey> {
         MacroCenterError::ParseError(format!("No key code found in hotkey string: '{s}'"))
     })?;
 
-    let code = parse_code(key_str)?;
+    let code = parse_code_normalized(key_str)?;
 
     let mods = if modifiers.is_empty() {
         None
@@ -232,47 +232,71 @@ fn parse_hotkey(s: &str) -> Result<HotKey> {
 }
 
 /// Parse a key name string into a `global_hotkey::hotkey::Code`.
+#[cfg(test)]
 fn parse_code(s: &str) -> Result<Code> {
-    match s.to_lowercase().as_str() {
-        // Letters
-        "a" => Ok(Code::KeyA),
-        "b" => Ok(Code::KeyB),
-        "c" => Ok(Code::KeyC),
-        "d" => Ok(Code::KeyD),
-        "e" => Ok(Code::KeyE),
-        "f" => Ok(Code::KeyF),
-        "g" => Ok(Code::KeyG),
-        "h" => Ok(Code::KeyH),
-        "i" => Ok(Code::KeyI),
-        "j" => Ok(Code::KeyJ),
-        "k" => Ok(Code::KeyK),
-        "l" => Ok(Code::KeyL),
-        "m" => Ok(Code::KeyM),
-        "n" => Ok(Code::KeyN),
-        "o" => Ok(Code::KeyO),
-        "p" => Ok(Code::KeyP),
-        "q" => Ok(Code::KeyQ),
-        "r" => Ok(Code::KeyR),
-        "s" => Ok(Code::KeyS),
-        "t" => Ok(Code::KeyT),
-        "u" => Ok(Code::KeyU),
-        "v" => Ok(Code::KeyV),
-        "w" => Ok(Code::KeyW),
-        "x" => Ok(Code::KeyX),
-        "y" => Ok(Code::KeyY),
-        "z" => Ok(Code::KeyZ),
-        // Digits
-        "0" => Ok(Code::Digit0),
-        "1" => Ok(Code::Digit1),
-        "2" => Ok(Code::Digit2),
-        "3" => Ok(Code::Digit3),
-        "4" => Ok(Code::Digit4),
-        "5" => Ok(Code::Digit5),
-        "6" => Ok(Code::Digit6),
-        "7" => Ok(Code::Digit7),
-        "8" => Ok(Code::Digit8),
-        "9" => Ok(Code::Digit9),
-        // Function keys
+    let normalized = s.to_lowercase();
+    parse_code_normalized(&normalized)
+}
+
+/// Parse a lowercase key name string into a `global_hotkey::hotkey::Code`.
+fn parse_code_normalized(s: &str) -> Result<Code> {
+    let bytes = s.as_bytes();
+    if bytes.len() == 1 {
+        return match bytes[0] {
+            b'a' => Ok(Code::KeyA),
+            b'b' => Ok(Code::KeyB),
+            b'c' => Ok(Code::KeyC),
+            b'd' => Ok(Code::KeyD),
+            b'e' => Ok(Code::KeyE),
+            b'f' => Ok(Code::KeyF),
+            b'g' => Ok(Code::KeyG),
+            b'h' => Ok(Code::KeyH),
+            b'i' => Ok(Code::KeyI),
+            b'j' => Ok(Code::KeyJ),
+            b'k' => Ok(Code::KeyK),
+            b'l' => Ok(Code::KeyL),
+            b'm' => Ok(Code::KeyM),
+            b'n' => Ok(Code::KeyN),
+            b'o' => Ok(Code::KeyO),
+            b'p' => Ok(Code::KeyP),
+            b'q' => Ok(Code::KeyQ),
+            b'r' => Ok(Code::KeyR),
+            b's' => Ok(Code::KeyS),
+            b't' => Ok(Code::KeyT),
+            b'u' => Ok(Code::KeyU),
+            b'v' => Ok(Code::KeyV),
+            b'w' => Ok(Code::KeyW),
+            b'x' => Ok(Code::KeyX),
+            b'y' => Ok(Code::KeyY),
+            b'z' => Ok(Code::KeyZ),
+            b'0' => Ok(Code::Digit0),
+            b'1' => Ok(Code::Digit1),
+            b'2' => Ok(Code::Digit2),
+            b'3' => Ok(Code::Digit3),
+            b'4' => Ok(Code::Digit4),
+            b'5' => Ok(Code::Digit5),
+            b'6' => Ok(Code::Digit6),
+            b'7' => Ok(Code::Digit7),
+            b'8' => Ok(Code::Digit8),
+            b'9' => Ok(Code::Digit9),
+            b'-' => Ok(Code::Minus),
+            b'=' => Ok(Code::Equal),
+            b'[' => Ok(Code::BracketLeft),
+            b']' => Ok(Code::BracketRight),
+            b'\\' => Ok(Code::Backslash),
+            b';' => Ok(Code::Semicolon),
+            b'\'' => Ok(Code::Quote),
+            b'`' => Ok(Code::Backquote),
+            b',' => Ok(Code::Comma),
+            b'.' => Ok(Code::Period),
+            b'/' => Ok(Code::Slash),
+            _ => Err(MacroCenterError::ParseError(format!(
+                "Unknown key code: '{s}'"
+            ))),
+        };
+    }
+
+    match s {
         "f1" => Ok(Code::F1),
         "f2" => Ok(Code::F2),
         "f3" => Ok(Code::F3),
@@ -285,7 +309,6 @@ fn parse_code(s: &str) -> Result<Code> {
         "f10" => Ok(Code::F10),
         "f11" => Ok(Code::F11),
         "f12" => Ok(Code::F12),
-        // Special keys
         "space" => Ok(Code::Space),
         "enter" | "return" => Ok(Code::Enter),
         "tab" => Ok(Code::Tab),
@@ -297,7 +320,6 @@ fn parse_code(s: &str) -> Result<Code> {
         "end" => Ok(Code::End),
         "pageup" => Ok(Code::PageUp),
         "pagedown" => Ok(Code::PageDown),
-        // Arrow keys
         "up" | "arrowup" => Ok(Code::ArrowUp),
         "down" | "arrowdown" => Ok(Code::ArrowDown),
         "left" | "arrowleft" => Ok(Code::ArrowLeft),

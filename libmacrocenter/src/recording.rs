@@ -13,6 +13,7 @@ use crate::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
 
 const ALL_MOVES_MIN_INTERVAL: Duration = Duration::from_millis(50);
 const ALL_MOVES_MIN_DISTANCE_PX: i32 = 8;
+const MOUSE_LISTENER_MIN_INTERVAL: Duration = Duration::from_millis(16);
 
 type MousePositionCallback = Arc<dyn Fn(MousePositionEvent) + Send + Sync + 'static>;
 
@@ -130,11 +131,11 @@ impl RecordedMacro {
         }
 
         let stop_move_start = preceding_mouse_move_start(&self.actions, remove_start);
-        if self.actions[..stop_move_start]
-            .iter()
-            .any(|action| !action.kind.is_mouse_move())
-        {
-            remove_start = stop_move_start;
+        for action in &self.actions[..stop_move_start] {
+            if !action.kind.is_mouse_move() {
+                remove_start = stop_move_start;
+                break;
+            }
         }
 
         self.actions.drain(remove_start..self.actions.len());
@@ -225,6 +226,7 @@ pub trait RecorderBackend {
 pub struct RdevRecorder {
     state: Arc<Mutex<RecorderState>>,
     listener_started: Arc<AtomicBool>,
+    event_interest: Arc<AtomicBool>,
 }
 
 impl RdevRecorder {
@@ -232,13 +234,14 @@ impl RdevRecorder {
         Self {
             state: Arc::new(Mutex::new(RecorderState::default())),
             listener_started: Arc::new(AtomicBool::new(false)),
+            event_interest: Arc::new(AtomicBool::new(false)),
         }
     }
 
     fn ensure_listener_started(&self) -> Result<()> {
         if self
             .listener_started
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .is_err()
         {
             return Ok(());
@@ -246,20 +249,25 @@ impl RdevRecorder {
 
         let state = Arc::clone(&self.state);
         let listener_started = Arc::clone(&self.listener_started);
+        let event_interest = Arc::clone(&self.event_interest);
         thread::Builder::new()
             .name("macro-center-rdev-listener".to_string())
             .spawn(move || {
                 let callback_state = Arc::clone(&state);
-                if let Err(error) = listen(move |event| record_event(&callback_state, event)) {
+                let callback_interest = Arc::clone(&event_interest);
+                if let Err(error) =
+                    listen(move |event| record_event(&callback_state, &callback_interest, event))
+                {
                     if let Ok(mut state) = state.lock() {
                         state.active = false;
                         state.listener_error = Some(format!("{error:?}"));
                     }
-                    listener_started.store(false, Ordering::SeqCst);
+                    event_interest.store(false, Ordering::Release);
+                    listener_started.store(false, Ordering::Release);
                 }
             })
             .map_err(|e| {
-                self.listener_started.store(false, Ordering::SeqCst);
+                self.listener_started.store(false, Ordering::Release);
                 MacroCenterError::RecorderError(e.to_string())
             })?;
 
@@ -302,6 +310,7 @@ impl RecorderBackend for RdevRecorder {
         state.last_mouse_position = None;
         state.last_mouse_move_time = None;
         state.actions.clear();
+        self.event_interest.store(true, Ordering::Release);
         Ok(())
     }
 
@@ -312,11 +321,18 @@ impl RecorderBackend for RdevRecorder {
             .map_err(|e| MacroCenterError::RecorderError(e.to_string()))?;
 
         if let Some(error) = state.listener_error.take() {
+            state.active = false;
+            state.pending_mouse_move = None;
+            let mouse_listener_active = state.mouse_listener_active;
+            self.event_interest
+                .store(mouse_listener_active, Ordering::Release);
             return Err(MacroCenterError::RecorderError(error));
         }
 
         state.active = false;
         state.pending_mouse_move = None;
+        self.event_interest
+            .store(state.mouse_listener_active, Ordering::Release);
         Ok(RecordedMacro::new(std::mem::take(&mut state.actions)))
     }
 
@@ -337,6 +353,8 @@ impl RecorderBackend for RdevRecorder {
         state.mouse_listener_active = true;
         state.mouse_listener_callback = Some(Arc::new(callback));
         state.mouse_listener_last_position = None;
+        state.mouse_listener_last_emit_time = None;
+        self.event_interest.store(true, Ordering::Release);
         Ok(())
     }
 
@@ -345,6 +363,8 @@ impl RecorderBackend for RdevRecorder {
             state.mouse_listener_active = false;
             state.mouse_listener_callback = None;
             state.mouse_listener_last_position = None;
+            state.mouse_listener_last_emit_time = None;
+            self.event_interest.store(state.active, Ordering::Release);
         }
     }
 
@@ -369,6 +389,7 @@ struct RecorderState {
     mouse_listener_active: bool,
     mouse_listener_callback: Option<MousePositionCallback>,
     mouse_listener_last_position: Option<(i32, i32)>,
+    mouse_listener_last_emit_time: Option<SystemTime>,
 }
 
 impl Default for RecorderState {
@@ -386,6 +407,7 @@ impl Default for RecorderState {
             mouse_listener_active: false,
             mouse_listener_callback: None,
             mouse_listener_last_position: None,
+            mouse_listener_last_emit_time: None,
         }
     }
 }
@@ -397,7 +419,11 @@ struct PendingMouseMove {
     y: i32,
 }
 
-fn record_event(state: &Arc<Mutex<RecorderState>>, event: Event) {
+fn record_event(state: &Arc<Mutex<RecorderState>>, event_interest: &AtomicBool, event: Event) {
+    if !event_interest.load(Ordering::Acquire) {
+        return;
+    }
+
     let mouse_listener_event = {
         let Ok(mut state) = state.lock() else {
             return;
@@ -412,7 +438,7 @@ fn record_event(state: &Arc<Mutex<RecorderState>>, event: Event) {
                         &mut state,
                         event.time,
                         RecordedActionKind::Key {
-                            key,
+                            key: key.to_owned(),
                             mode: ActionMode::Press,
                         },
                     );
@@ -427,7 +453,7 @@ fn record_event(state: &Arc<Mutex<RecorderState>>, event: Event) {
                         &mut state,
                         event.time,
                         RecordedActionKind::Key {
-                            key,
+                            key: key.to_owned(),
                             mode: ActionMode::Release,
                         },
                     );
@@ -490,18 +516,25 @@ fn record_event(state: &Arc<Mutex<RecorderState>>, event: Event) {
                 let x = saturating_f64_to_i32(x);
                 let y = saturating_f64_to_i32(y);
                 let mouse_event = if state.mouse_listener_active {
+                    let previous_position = state.mouse_listener_last_position;
                     state.mouse_listener_last_position = Some((x, y));
-                    state.mouse_listener_callback.as_ref().map(|callback| {
-                        (
-                            callback.clone(),
-                            MousePositionEvent {
-                                x,
-                                y,
-                                clicked: false,
-                                button: None,
-                            },
-                        )
-                    })
+                    if should_emit_mouse_listener_move(&state, previous_position, event.time, x, y)
+                    {
+                        state.mouse_listener_last_emit_time = Some(event.time);
+                        state.mouse_listener_callback.as_ref().map(|callback| {
+                            (
+                                callback.clone(),
+                                MousePositionEvent {
+                                    x,
+                                    y,
+                                    clicked: false,
+                                    button: None,
+                                },
+                            )
+                        })
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 };
@@ -618,6 +651,26 @@ fn should_commit_sampled_mouse_move(
     elapsed_ok && distance_squared >= min_distance_squared
 }
 
+fn should_emit_mouse_listener_move(
+    state: &RecorderState,
+    previous_position: Option<(i32, i32)>,
+    time: SystemTime,
+    x: i32,
+    y: i32,
+) -> bool {
+    let Some(last_time) = state.mouse_listener_last_emit_time else {
+        return true;
+    };
+
+    if previous_position == Some((x, y)) {
+        return false;
+    }
+
+    time.duration_since(last_time)
+        .map(|elapsed| elapsed >= MOUSE_LISTENER_MIN_INTERVAL)
+        .unwrap_or(true)
+}
+
 fn commit_action(state: &mut RecorderState, time: SystemTime, kind: RecordedActionKind) {
     let delay_ms = state
         .last_action_time
@@ -675,7 +728,7 @@ fn rdev_button_to_macro_button(button: Button) -> Option<MouseButton> {
     }
 }
 
-fn rdev_key_to_macro_key(key: Key) -> Option<String> {
+fn rdev_key_to_macro_key(key: Key) -> Option<&'static str> {
     let key = match key {
         Key::Alt | Key::AltGr => "Alt",
         Key::Backspace => "Backspace",
@@ -767,7 +820,7 @@ fn rdev_key_to_macro_key(key: Key) -> Option<String> {
         _ => return None,
     };
 
-    Some(key.to_string())
+    Some(key)
 }
 
 #[cfg(test)]
