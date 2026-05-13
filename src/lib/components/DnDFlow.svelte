@@ -76,6 +76,7 @@
     writeTextFile,
     readTextFile,
   } from "@tauri-apps/plugin-fs";
+  import { listen as listenEvent } from "@tauri-apps/api/event";
   import {
     recordedMacroToGraph,
     type RecordedMacro,
@@ -119,6 +120,21 @@
     sourceHandle: string | null;
   };
 
+  type MousePositionPayload = {
+    x: number;
+    y: number;
+    clicked: boolean;
+    button?: string | null;
+  };
+
+  type SavedMouseClick = {
+    id: string;
+    x: number;
+    y: number;
+    button?: string | null;
+    createdAt: string;
+  };
+
   // use $state.raw for performance as recommended by xyflow docs
   let nodes = $state.raw(initialNodes);
   let edges = $state.raw(initialEdges);
@@ -127,6 +143,11 @@
   let selectedNodes = $state.raw([] as typeof nodes);
   let variableSnapshot = $state({} as Record<string, MacroValue>);
   let showVariables = $state(false);
+  let showMousePositionPanel = $state(false);
+  let isMousePositionMonitoring = $state(false);
+  let mousePositionError = $state("");
+  let currentMousePosition = $state<MousePositionPayload | undefined>();
+  let savedMouseClicks = $state.raw([] as SavedMouseClick[]);
   let undoStack = $state.raw([] as EditorSnapshot[]);
   let redoStack = $state.raw([] as EditorSnapshot[]);
   let copiedGraph = $state.raw<GraphClipboard | undefined>();
@@ -491,6 +512,26 @@
     recordingShortcut = false;
   }
 
+  async function toggleMousePositionMonitoring() {
+    mousePositionError = "";
+    try {
+      if (isMousePositionMonitoring) {
+        await invoke("stop_mouse_position_monitor");
+        isMousePositionMonitoring = false;
+      } else {
+        await invoke("start_mouse_position_monitor");
+        isMousePositionMonitoring = true;
+      }
+    } catch (error) {
+      mousePositionError = String(error);
+      console.error("Failed to toggle mouse position monitor:", error);
+    }
+  }
+
+  function clearSavedMouseClicks() {
+    savedMouseClicks = [];
+  }
+
   onDestroy(() => {
     if (historyTimer) {
       clearTimeout(historyTimer);
@@ -502,6 +543,10 @@
 
     if (isRecording) {
       void invoke("stop_macro_recording");
+    }
+
+    if (isMousePositionMonitoring) {
+      void invoke("stop_mouse_position_monitor");
     }
   });
 
@@ -1079,7 +1124,38 @@
 
   onMount(() => {
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    let unlistenMousePosition: (() => void) | undefined;
+
+    void listenEvent<MousePositionPayload>("mouse_position", (event) => {
+      currentMousePosition = event.payload;
+      if (event.payload.clicked) {
+        savedMouseClicks = [
+          {
+            id: crypto.randomUUID(),
+            x: event.payload.x,
+            y: event.payload.y,
+            button: event.payload.button,
+            createdAt: new Date().toLocaleTimeString(),
+          },
+          ...savedMouseClicks,
+        ].slice(0, 24);
+      }
+    }).then((unlisten) => {
+      unlistenMousePosition = unlisten;
+    });
+
+    void invoke<boolean>("is_mouse_position_monitoring")
+      .then((active) => {
+        isMousePositionMonitoring = active;
+      })
+      .catch(() => {
+        isMousePositionMonitoring = false;
+      });
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      unlistenMousePosition?.();
+    };
   });
 
   async function saveMacro() {
@@ -1457,6 +1533,9 @@
       <button class="panel-btn" onclick={() => (showVariables = !showVariables)}>
         Variables
       </button>
+      <button class="panel-btn" onclick={() => (showMousePositionPanel = !showMousePositionPanel)}>
+        Mouse
+      </button>
       <button
         class="panel-btn"
         disabled={selectedNodes.length === 0}
@@ -1470,6 +1549,45 @@
     <Panel position="top-left">
       {#if showVariables}
         <VariablesPanel bind:variables snapshot={variableSnapshot} />
+      {/if}
+      {#if showMousePositionPanel}
+        <div class="mouse-position-panel">
+          <div class="mouse-position-header">
+            <div>
+              <div class="mouse-position-title">Mouse Position</div>
+              <div class="mouse-position-status" class:active={isMousePositionMonitoring}>
+                {isMousePositionMonitoring ? "Listening" : "Stopped"}
+              </div>
+            </div>
+            <button class="panel-btn" onclick={toggleMousePositionMonitoring}>
+              {isMousePositionMonitoring ? "Stop" : "Start"}
+            </button>
+          </div>
+          <div class="mouse-coordinate">
+            <span>X {currentMousePosition?.x ?? "--"}</span>
+            <span>Y {currentMousePosition?.y ?? "--"}</span>
+          </div>
+          {#if mousePositionError}
+            <div class="mouse-position-error">{mousePositionError}</div>
+          {/if}
+          <div class="mouse-click-header">
+            <span>Clicks</span>
+            <button onclick={clearSavedMouseClicks} disabled={savedMouseClicks.length === 0}>
+              Clear
+            </button>
+          </div>
+          <div class="mouse-click-list">
+            {#each savedMouseClicks as click (click.id)}
+              <div class="mouse-click-row">
+                <span>{click.button ?? "mouse"}</span>
+                <span>{click.x}, {click.y}</span>
+                <small>{click.createdAt}</small>
+              </div>
+            {:else}
+              <div class="mouse-click-empty">No clicks saved.</div>
+            {/each}
+          </div>
+        </div>
       {/if}
       {#if submacros.length > 0}
         <div class="submacro-panel">
@@ -1782,6 +1900,115 @@
     font-size: 0.78rem;
     padding: 0.35rem 0.45rem;
     text-align: left;
+  }
+
+  .mouse-position-panel {
+    background: rgba(18, 18, 18, 0.96);
+    border: 1px solid #3e3e3e;
+    border-radius: 6px;
+    color: #e0e0e0;
+    display: grid;
+    gap: 0.55rem;
+    min-width: 220px;
+    padding: 0.65rem;
+  }
+
+  .mouse-position-header,
+  .mouse-click-header,
+  .mouse-coordinate,
+  .mouse-click-row {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .mouse-position-header .panel-btn {
+    margin-left: 0;
+    padding: 4px 8px;
+  }
+
+  .mouse-position-title {
+    color: #f1f1f1;
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
+
+  .mouse-position-status {
+    color: #888;
+    font-size: 0.72rem;
+  }
+
+  .mouse-position-status.active {
+    color: #8fd4ff;
+  }
+
+  .mouse-coordinate {
+    background: #232426;
+    border: 1px solid #414141;
+    border-radius: 4px;
+    color: #f1f1f1;
+    font-family: "Fira Mono", monospace;
+    font-size: 0.82rem;
+    gap: 0.75rem;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .mouse-position-error {
+    color: #ff8aa8;
+    font-size: 0.74rem;
+  }
+
+  .mouse-click-header {
+    color: #888;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+  }
+
+  .mouse-click-header button {
+    background: transparent;
+    border: 0;
+    color: #8fd4ff;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-transform: none;
+  }
+
+  .mouse-click-header button:disabled {
+    color: #555;
+    cursor: not-allowed;
+  }
+
+  .mouse-click-list {
+    display: grid;
+    gap: 0.25rem;
+    max-height: 160px;
+    overflow: auto;
+    scrollbar-color: #4a4a4a #171717;
+    scrollbar-width: thin;
+  }
+
+  .mouse-click-row {
+    background: #232426;
+    border: 1px solid #353535;
+    border-radius: 4px;
+    gap: 0.5rem;
+    padding: 0.35rem 0.45rem;
+  }
+
+  .mouse-click-row span {
+    color: #f1f1f1;
+    font-size: 0.76rem;
+  }
+
+  .mouse-click-row small,
+  .mouse-click-empty {
+    color: #888;
+    font-size: 0.7rem;
+  }
+
+  .mouse-click-empty {
+    padding: 0.35rem 0.1rem;
   }
 
   .context-menu {

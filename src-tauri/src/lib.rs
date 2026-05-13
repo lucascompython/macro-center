@@ -1,9 +1,11 @@
 use std::sync::Mutex;
 
 use libmacrocenter::input::InputSimulator;
-use libmacrocenter::recording::{RdevRecorder, RecordedMacro, RecorderBackend, RecordingMouseMode};
+use libmacrocenter::recording::{
+    MousePositionEvent, RdevRecorder, RecordedMacro, RecorderBackend, RecordingMouseMode,
+};
 use libmacrocenter::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 struct SimulatorState {
     simulator: Mutex<InputSimulator>,
@@ -98,6 +100,29 @@ fn is_macro_recording(state: tauri::State<RecorderState>) -> bool {
     state.recorder.is_recording()
 }
 
+#[tauri::command]
+fn start_mouse_position_monitor(
+    app: tauri::AppHandle,
+    state: tauri::State<RecorderState>,
+) -> Result<(), String> {
+    state
+        .recorder
+        .start_mouse_listening(move |event: MousePositionEvent| {
+            let _ = app.emit("mouse_position", event);
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn stop_mouse_position_monitor(state: tauri::State<RecorderState>) {
+    state.recorder.stop_mouse_listening();
+}
+
+#[tauri::command]
+fn is_mouse_position_monitoring(state: tauri::State<RecorderState>) -> bool {
+    state.recorder.is_mouse_listening()
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -142,7 +167,10 @@ pub fn run() {
             simulate_scroll,
             start_macro_recording,
             stop_macro_recording,
-            is_macro_recording
+            is_macro_recording,
+            start_mouse_position_monitor,
+            stop_mouse_position_monitor,
+            is_mouse_position_monitoring
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

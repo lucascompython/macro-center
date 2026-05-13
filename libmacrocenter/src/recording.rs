@@ -14,6 +14,8 @@ use crate::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
 const ALL_MOVES_MIN_INTERVAL: Duration = Duration::from_millis(50);
 const ALL_MOVES_MIN_DISTANCE_PX: i32 = 8;
 
+type MousePositionCallback = Arc<dyn Fn(MousePositionEvent) + Send + Sync + 'static>;
+
 /// Mouse movement policy used while recording.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -147,6 +149,15 @@ pub struct RecordedAction {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MousePositionEvent {
+    pub x: i32,
+    pub y: i32,
+    pub clicked: bool,
+    pub button: Option<MouseButton>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(
     tag = "type",
     rename_all = "camelCase",
@@ -203,6 +214,11 @@ pub trait RecorderBackend {
     fn start_recording(&self, mode: RecordingMouseMode) -> Result<()>;
     fn stop_recording(&self) -> Result<RecordedMacro>;
     fn is_recording(&self) -> bool;
+    fn start_mouse_listening<F>(&self, callback: F) -> Result<()>
+    where
+        F: Fn(MousePositionEvent) + Send + Sync + 'static;
+    fn stop_mouse_listening(&self);
+    fn is_mouse_listening(&self) -> bool;
 }
 
 #[derive(Clone)]
@@ -307,9 +323,39 @@ impl RecorderBackend for RdevRecorder {
     fn is_recording(&self) -> bool {
         self.state.lock().map(|state| state.active).unwrap_or(false)
     }
+
+    fn start_mouse_listening<F>(&self, callback: F) -> Result<()>
+    where
+        F: Fn(MousePositionEvent) + Send + Sync + 'static,
+    {
+        self.ensure_listener_started()?;
+
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|e| MacroCenterError::RecorderError(e.to_string()))?;
+        state.mouse_listener_active = true;
+        state.mouse_listener_callback = Some(Arc::new(callback));
+        state.mouse_listener_last_position = None;
+        Ok(())
+    }
+
+    fn stop_mouse_listening(&self) {
+        if let Ok(mut state) = self.state.lock() {
+            state.mouse_listener_active = false;
+            state.mouse_listener_callback = None;
+            state.mouse_listener_last_position = None;
+        }
+    }
+
+    fn is_mouse_listening(&self) -> bool {
+        self.state
+            .lock()
+            .map(|state| state.mouse_listener_active)
+            .unwrap_or(false)
+    }
 }
 
-#[derive(Debug)]
 struct RecorderState {
     active: bool,
     mode: RecordingMouseMode,
@@ -320,6 +366,9 @@ struct RecorderState {
     last_mouse_position: Option<(i32, i32)>,
     last_mouse_move_time: Option<SystemTime>,
     listener_error: Option<String>,
+    mouse_listener_active: bool,
+    mouse_listener_callback: Option<MousePositionCallback>,
+    mouse_listener_last_position: Option<(i32, i32)>,
 }
 
 impl Default for RecorderState {
@@ -334,6 +383,9 @@ impl Default for RecorderState {
             last_mouse_position: None,
             last_mouse_move_time: None,
             listener_error: None,
+            mouse_listener_active: false,
+            mouse_listener_callback: None,
+            mouse_listener_last_position: None,
         }
     }
 }
@@ -346,112 +398,172 @@ struct PendingMouseMove {
 }
 
 fn record_event(state: &Arc<Mutex<RecorderState>>, event: Event) {
-    let Ok(mut state) = state.lock() else {
-        return;
-    };
-    if !state.active {
-        return;
-    }
+    let mouse_listener_event = {
+        let Ok(mut state) = state.lock() else {
+            return;
+        };
 
-    match event.event_type {
-        EventType::KeyPress(key) => {
-            if let Some(key) = rdev_key_to_macro_key(key) {
-                commit_action(
-                    &mut state,
-                    event.time,
-                    RecordedActionKind::Key {
-                        key,
-                        mode: ActionMode::Press,
-                    },
-                );
-            }
-        }
-        EventType::KeyRelease(key) => {
-            if let Some(key) = rdev_key_to_macro_key(key) {
-                commit_action(
-                    &mut state,
-                    event.time,
-                    RecordedActionKind::Key {
-                        key,
-                        mode: ActionMode::Release,
-                    },
-                );
-            }
-        }
-        EventType::ButtonPress(button) => {
-            if let Some(button) = rdev_button_to_macro_button(button) {
-                commit_pending_mouse_move(&mut state);
-                commit_action(
-                    &mut state,
-                    event.time,
-                    RecordedActionKind::MouseButton {
-                        button,
-                        mode: ActionMode::Press,
-                    },
-                );
-            }
-        }
-        EventType::ButtonRelease(button) => {
-            if let Some(button) = rdev_button_to_macro_button(button) {
-                commit_action(
-                    &mut state,
-                    event.time,
-                    RecordedActionKind::MouseButton {
-                        button,
-                        mode: ActionMode::Release,
-                    },
-                );
-            }
-        }
-        EventType::MouseMove { x, y } => {
-            let x = saturating_f64_to_i32(x);
-            let y = saturating_f64_to_i32(y);
-            match state.mode {
-                RecordingMouseMode::MovesBeforeClicks => {
-                    state.pending_mouse_move = Some(PendingMouseMove {
-                        time: event.time,
-                        x,
-                        y,
-                    });
+        match event.event_type {
+            EventType::KeyPress(key) => {
+                if state.active
+                    && let Some(key) = rdev_key_to_macro_key(key)
+                {
+                    commit_action(
+                        &mut state,
+                        event.time,
+                        RecordedActionKind::Key {
+                            key,
+                            mode: ActionMode::Press,
+                        },
+                    );
                 }
-                RecordingMouseMode::AllMoves => {
-                    if should_commit_sampled_mouse_move(&state, event.time, x, y) {
-                        state.pending_mouse_move = None;
-                        commit_mouse_move(&mut state, event.time, x, y);
-                    } else {
-                        state.pending_mouse_move = Some(PendingMouseMove {
-                            time: event.time,
-                            x,
-                            y,
-                        });
+                None
+            }
+            EventType::KeyRelease(key) => {
+                if state.active
+                    && let Some(key) = rdev_key_to_macro_key(key)
+                {
+                    commit_action(
+                        &mut state,
+                        event.time,
+                        RecordedActionKind::Key {
+                            key,
+                            mode: ActionMode::Release,
+                        },
+                    );
+                }
+                None
+            }
+            EventType::ButtonPress(button) => {
+                let button = rdev_button_to_macro_button(button);
+                let mouse_event = if state.mouse_listener_active {
+                    state
+                        .mouse_listener_last_position
+                        .zip(state.mouse_listener_callback.as_ref())
+                        .map(|((x, y), callback)| {
+                            (
+                                callback.clone(),
+                                MousePositionEvent {
+                                    x,
+                                    y,
+                                    clicked: true,
+                                    button,
+                                },
+                            )
+                        })
+                } else {
+                    None
+                };
+
+                if state.active
+                    && let Some(button) = button
+                {
+                    commit_pending_mouse_move(&mut state);
+                    commit_action(
+                        &mut state,
+                        event.time,
+                        RecordedActionKind::MouseButton {
+                            button,
+                            mode: ActionMode::Press,
+                        },
+                    );
+                }
+
+                mouse_event
+            }
+            EventType::ButtonRelease(button) => {
+                if state.active
+                    && let Some(button) = rdev_button_to_macro_button(button)
+                {
+                    commit_action(
+                        &mut state,
+                        event.time,
+                        RecordedActionKind::MouseButton {
+                            button,
+                            mode: ActionMode::Release,
+                        },
+                    );
+                }
+                None
+            }
+            EventType::MouseMove { x, y } => {
+                let x = saturating_f64_to_i32(x);
+                let y = saturating_f64_to_i32(y);
+                let mouse_event = if state.mouse_listener_active {
+                    state.mouse_listener_last_position = Some((x, y));
+                    state.mouse_listener_callback.as_ref().map(|callback| {
+                        (
+                            callback.clone(),
+                            MousePositionEvent {
+                                x,
+                                y,
+                                clicked: false,
+                                button: None,
+                            },
+                        )
+                    })
+                } else {
+                    None
+                };
+
+                if state.active {
+                    match state.mode {
+                        RecordingMouseMode::MovesBeforeClicks => {
+                            state.pending_mouse_move = Some(PendingMouseMove {
+                                time: event.time,
+                                x,
+                                y,
+                            });
+                        }
+                        RecordingMouseMode::AllMoves => {
+                            if should_commit_sampled_mouse_move(&state, event.time, x, y) {
+                                state.pending_mouse_move = None;
+                                commit_mouse_move(&mut state, event.time, x, y);
+                            } else {
+                                state.pending_mouse_move = Some(PendingMouseMove {
+                                    time: event.time,
+                                    x,
+                                    y,
+                                });
+                            }
+                        }
                     }
                 }
+
+                mouse_event
+            }
+            EventType::Wheel { delta_x, delta_y } => {
+                if state.active {
+                    if delta_y != 0 {
+                        commit_action(
+                            &mut state,
+                            event.time,
+                            RecordedActionKind::Scroll {
+                                axis: ScrollAxis::Vertical,
+                                // rdev reports positive vertical wheel movement as up;
+                                // enigo uses positive values for down.
+                                amount: saturating_i64_to_i32(-delta_y),
+                            },
+                        );
+                    }
+                    if delta_x != 0 {
+                        commit_action(
+                            &mut state,
+                            event.time,
+                            RecordedActionKind::Scroll {
+                                axis: ScrollAxis::Horizontal,
+                                amount: saturating_i64_to_i32(delta_x),
+                            },
+                        );
+                    }
+                }
+                None
             }
         }
-        EventType::Wheel { delta_x, delta_y } => {
-            if delta_y != 0 {
-                commit_action(
-                    &mut state,
-                    event.time,
-                    RecordedActionKind::Scroll {
-                        axis: ScrollAxis::Vertical,
-                        // rdev reports positive vertical wheel movement as up;
-                        // enigo uses positive values for down.
-                        amount: saturating_i64_to_i32(-delta_y),
-                    },
-                );
-            }
-            if delta_x != 0 {
-                commit_action(
-                    &mut state,
-                    event.time,
-                    RecordedActionKind::Scroll {
-                        axis: ScrollAxis::Horizontal,
-                        amount: saturating_i64_to_i32(delta_x),
-                    },
-                );
-            }
-        }
+    };
+
+    if let Some((callback, event)) = mouse_listener_event {
+        callback(event);
     }
 }
 
