@@ -35,10 +35,6 @@ type MeasuredNode = Node & {
   height?: number;
 };
 
-function cloneJson<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
 function sanitizePortId(value: string) {
   return value
     .trim()
@@ -104,7 +100,7 @@ function nodeHeight(node: Node) {
 }
 
 function detachNodeFromParent(node: Node): Node {
-  const cloned = cloneJson(node) as Node & {
+  const cloned = structuredClone(node) as Node & {
     parentId?: string;
     extent?: string;
     expandParent?: boolean;
@@ -123,10 +119,17 @@ export function createSubmacroFromSelectionModel({
 }: CreateSubmacroOptions): CreateSubmacroResult | undefined {
   if (selectedNodes.length === 0) return undefined;
 
-  const selectedIds = new Set(selectedNodes.map((node) => node.id));
-  const selected = nodes.filter(
-    (node) => selectedIds.has(node.id) && node.type !== "subflowGroupNode",
-  );
+  const selectedIds = new Set<string>();
+  for (const node of selectedNodes) {
+    selectedIds.add(node.id);
+  }
+
+  const selected: Node[] = [];
+  for (const node of nodes) {
+    if (selectedIds.has(node.id) && node.type !== "subflowGroupNode") {
+      selected.push(node);
+    }
+  }
   if (selected.length === 0) return undefined;
 
   const internalEdges: Edge[] = [];
@@ -149,19 +152,45 @@ export function createSubmacroFromSelectionModel({
     }
   }
 
-  const incomingTriggerEdges = incomingEdges.filter((edge) => edgeKind(edge) === "trigger");
-  const incomingValueEdges = incomingEdges.filter((edge) => edgeKind(edge) === "value");
-  const outgoingTriggerEdges = outgoingEdges.filter((edge) => edgeKind(edge) === "trigger");
-  const outgoingValueEdges = outgoingEdges.filter((edge) => edgeKind(edge) === "value");
+  const incomingTriggerEdges: Edge[] = [];
+  const incomingValueEdges: Edge[] = [];
+  for (const edge of incomingEdges) {
+    if (edgeKind(edge) === "trigger") {
+      incomingTriggerEdges.push(edge);
+    } else {
+      incomingValueEdges.push(edge);
+    }
+  }
 
-  const internalTriggerTargets = new Set(
-    internalEdges.filter((edge) => edgeKind(edge) === "trigger").map((edge) => edge.target),
-  );
-  let entryNodeIds = [...new Set(incomingTriggerEdges.map((edge) => edge.target))];
+  const outgoingTriggerEdges: Edge[] = [];
+  const outgoingValueEdges: Edge[] = [];
+  for (const edge of outgoingEdges) {
+    if (edgeKind(edge) === "trigger") {
+      outgoingTriggerEdges.push(edge);
+    } else {
+      outgoingValueEdges.push(edge);
+    }
+  }
+
+  const internalTriggerTargets = new Set<string>();
+  for (const edge of internalEdges) {
+    if (edgeKind(edge) === "trigger") {
+      internalTriggerTargets.add(edge.target);
+    }
+  }
+
+  const entryNodeIdSet = new Set<string>();
+  for (const edge of incomingTriggerEdges) {
+    entryNodeIdSet.add(edge.target);
+  }
+  let entryNodeIds = Array.from(entryNodeIdSet);
   if (entryNodeIds.length === 0) {
-    entryNodeIds = selected
-      .filter((node) => !internalTriggerTargets.has(node.id))
-      .map((node) => node.id);
+    entryNodeIds = [];
+    for (const node of selected) {
+      if (!internalTriggerTargets.has(node.id)) {
+        entryNodeIds.push(node.id);
+      }
+    }
   }
   if (entryNodeIds.length === 0) {
     entryNodeIds = [selected[0].id];
@@ -177,7 +206,10 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.source}:${sourceHandle}`;
     let outputId = triggerOutputBySource.get(mapKey);
     if (!outputId) {
-      outputId = uniquePortId(portLabelFromHandle(sourceHandle, "done"), usedTriggerOutputIds);
+      outputId = uniquePortId(
+        portLabelFromHandle(sourceHandle, "done"),
+        usedTriggerOutputIds,
+      );
       triggerOutputBySource.set(mapKey, outputId);
       triggerOutputs.push({
         id: outputId,
@@ -205,7 +237,10 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.target}:${targetHandle}`;
     let inputId = valueInputByTarget.get(mapKey);
     if (!inputId) {
-      inputId = uniquePortId(valueHandleName(targetHandle) ?? "input", usedValueInputIds);
+      inputId = uniquePortId(
+        valueHandleName(targetHandle) ?? "input",
+        usedValueInputIds,
+      );
       valueInputByTarget.set(mapKey, inputId);
       valueInputs.push({
         id: inputId,
@@ -231,7 +266,10 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.source}:${sourceHandle}`;
     let outputId = valueOutputBySource.get(mapKey);
     if (!outputId) {
-      outputId = uniquePortId(valueHandleName(sourceHandle) ?? "value", usedValueOutputIds);
+      outputId = uniquePortId(
+        valueHandleName(sourceHandle) ?? "value",
+        usedValueOutputIds,
+      );
       valueOutputBySource.set(mapKey, outputId);
       valueOutputs.push({
         id: outputId,
@@ -250,8 +288,8 @@ export function createSubmacroFromSelectionModel({
   const submacro: SubmacroDefinition = {
     id: crypto.randomUUID(),
     name: `Submacro ${submacroCount + 1}`,
-    nodes: cloneJson(selected.map(detachNodeFromParent)),
-    edges: cloneJson(internalEdges),
+    nodes: [],
+    edges: structuredClone(internalEdges),
     variables: [],
     entryNodeIds,
     triggerOutputs,
@@ -266,27 +304,37 @@ export function createSubmacroFromSelectionModel({
 
   const padding = 48;
   const headerHeight = 48;
-  const minX = Math.min(...selected.map((node) => node.position.x));
-  const minY = Math.min(...selected.map((node) => node.position.y));
-  const maxX = Math.max(...selected.map((node) => node.position.x + nodeWidth(node)));
-  const maxY = Math.max(...selected.map((node) => node.position.y + nodeHeight(node)));
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const node of selected) {
+    minX = Math.min(minX, node.position.x);
+    minY = Math.min(minY, node.position.y);
+    maxX = Math.max(maxX, node.position.x + nodeWidth(node));
+    maxY = Math.max(maxY, node.position.y + nodeHeight(node));
+  }
   const groupX = minX - padding;
   const groupY = minY - headerHeight - padding;
   const groupWidth = Math.max(420, maxX - minX + padding * 2);
   const groupHeight = Math.max(260, maxY - minY + padding * 2 + headerHeight);
 
   const subflowGroupId = crypto.randomUUID();
-  const groupedNodes = selected.map((node) => ({
-    ...cloneJson(node),
-    position: {
-      x: node.position.x - groupX,
-      y: node.position.y - groupY,
-    },
-    parentId: subflowGroupId,
-    extent: "parent" as const,
-  }));
+  const groupedNodes = new Array<Node>(selected.length);
+  for (let index = 0; index < selected.length; index += 1) {
+    const node = selected[index];
+    groupedNodes[index] = {
+      ...structuredClone(node),
+      position: {
+        x: node.position.x - groupX,
+        y: node.position.y - groupY,
+      },
+      parentId: subflowGroupId,
+      extent: "parent" as const,
+    };
+  }
 
-  submacro.nodes = cloneJson(groupedNodes.map(detachNodeFromParent));
+  submacro.nodes = detachNodesFromParents(groupedNodes);
 
   const subflowGroupNode: Node = {
     id: subflowGroupId,
@@ -305,13 +353,16 @@ export function createSubmacroFromSelectionModel({
     data: submacroNodeData(submacro),
   };
 
-  const rewrittenEdges = [
-    ...untouchedEdges,
-    ...internalEdges.map((edge) => ({
+  const rewrittenEdges: Edge[] = [];
+  for (const edge of untouchedEdges) {
+    rewrittenEdges.push(edge);
+  }
+  for (const edge of internalEdges) {
+    rewrittenEdges.push({
       ...edge,
       data: { ...(edge.data ?? {}), kind: edgeKind(edge) },
-    })),
-  ];
+    });
+  }
 
   for (const edge of incomingEdges) {
     if (edgeKind(edge) === "value") {
@@ -321,7 +372,11 @@ export function createSubmacroFromSelectionModel({
       if (!inputId) continue;
       rewrittenEdges.push({
         ...edge,
-        id: makeEdgeId({ ...edge, target: submacroNodeId, targetHandle: valueHandle(inputId) }),
+        id: makeEdgeId({
+          ...edge,
+          target: submacroNodeId,
+          targetHandle: valueHandle(inputId),
+        }),
         target: submacroNodeId,
         targetHandle: valueHandle(inputId),
         data: { ...(edge.data ?? {}), kind: "value" },
@@ -332,7 +387,11 @@ export function createSubmacroFromSelectionModel({
 
     rewrittenEdges.push({
       ...edge,
-      id: makeEdgeId({ ...edge, target: submacroNodeId, targetHandle: FLOW_IN_HANDLE }),
+      id: makeEdgeId({
+        ...edge,
+        target: submacroNodeId,
+        targetHandle: FLOW_IN_HANDLE,
+      }),
       target: submacroNodeId,
       targetHandle: FLOW_IN_HANDLE,
       data: { ...(edge.data ?? {}), kind: "trigger" },
@@ -347,7 +406,11 @@ export function createSubmacroFromSelectionModel({
       if (!outputId) continue;
       rewrittenEdges.push({
         ...edge,
-        id: makeEdgeId({ ...edge, source: submacroNodeId, sourceHandle: valueHandle(outputId) }),
+        id: makeEdgeId({
+          ...edge,
+          source: submacroNodeId,
+          sourceHandle: valueHandle(outputId),
+        }),
         source: submacroNodeId,
         sourceHandle: valueHandle(outputId),
         data: { ...(edge.data ?? {}), kind: "value" },
@@ -357,7 +420,9 @@ export function createSubmacroFromSelectionModel({
     }
 
     const sourceHandle = edge.sourceHandle ?? FLOW_OUT_HANDLE;
-    const outputId = triggerOutputBySource.get(`${edge.source}:${sourceHandle}`) ?? triggerOutputs[0].id;
+    const outputId =
+      triggerOutputBySource.get(`${edge.source}:${sourceHandle}`) ??
+      triggerOutputs[0].id;
     rewrittenEdges.push({
       ...edge,
       id: makeEdgeId({
@@ -372,15 +437,35 @@ export function createSubmacroFromSelectionModel({
   }
 
   return {
-    nodes: [
-      ...nodes.filter((node) => !selectedIds.has(node.id)),
+    nodes: createSubflowNodeList(
+      nodes,
+      selectedIds,
       subflowGroupNode,
-      ...groupedNodes,
+      groupedNodes,
       submacroNode,
-    ],
+    ),
     edges: rewrittenEdges,
     submacro,
   };
+}
+
+function createSubflowNodeList(
+  nodes: Node[],
+  selectedIds: Set<string>,
+  subflowGroupNode: Node,
+  groupedNodes: Node[],
+  submacroNode: Node,
+) {
+  const nextNodes: Node[] = [];
+  for (const node of nodes) {
+    if (!selectedIds.has(node.id)) nextNodes.push(node);
+  }
+  nextNodes.push(subflowGroupNode);
+  for (const node of groupedNodes) {
+    nextNodes.push(node);
+  }
+  nextNodes.push(submacroNode);
+  return nextNodes;
 }
 
 export function syncSubmacroDefinitionsFromSubflows(
@@ -398,24 +483,58 @@ export function syncSubmacroDefinitionsFromSubflows(
 
   if (groupsByDefinition.size === 0) return submacros;
 
-  return submacros.map((submacro) => {
-    const group = groupsByDefinition.get(submacro.id);
-    if (!group) return submacro;
+  const childrenByGroup = new Map<string, Node[]>();
+  for (const node of nodes) {
+    if (!node.parentId) continue;
+    const group = childrenByGroup.get(node.parentId);
+    if (group) {
+      group.push(node);
+    } else {
+      childrenByGroup.set(node.parentId, [node]);
+    }
+  }
 
-    const childNodes = nodes.filter((node) => node.parentId === group.id);
-    const childIds = new Set(childNodes.map((node) => node.id));
-    const internalEdges = edges.filter(
-      (edge) => childIds.has(edge.source) && childIds.has(edge.target),
-    );
+  const syncedSubmacros = new Array<SubmacroDefinition>(submacros.length);
+  for (let index = 0; index < submacros.length; index += 1) {
+    const submacro = submacros[index];
+    const group = groupsByDefinition.get(submacro.id);
+    if (!group) {
+      syncedSubmacros[index] = submacro;
+      continue;
+    }
+
+    const childNodes = childrenByGroup.get(group.id) ?? [];
+    const childIds = new Set<string>();
+    for (const node of childNodes) {
+      childIds.add(node.id);
+    }
+
+    const internalEdges: Edge[] = [];
+    for (const edge of edges) {
+      if (childIds.has(edge.source) && childIds.has(edge.target)) {
+        internalEdges.push(edge);
+      }
+    }
 
     const name = String(group.data?.title ?? submacro.name).trim() || "Subflow";
 
-    return {
+    syncedSubmacros[index] = {
       ...submacro,
       name,
-      nodes: cloneJson(childNodes.map(detachNodeFromParent)),
-      edges: cloneJson(internalEdges),
-      updatedAt: name === submacro.name ? submacro.updatedAt : new Date().toISOString(),
+      nodes: detachNodesFromParents(childNodes),
+      edges: structuredClone(internalEdges),
+      updatedAt:
+        name === submacro.name ? submacro.updatedAt : new Date().toISOString(),
     };
-  });
+  }
+
+  return syncedSubmacros;
+}
+
+function detachNodesFromParents(nodes: Node[]) {
+  const detached = new Array<Node>(nodes.length);
+  for (let index = 0; index < nodes.length; index += 1) {
+    detached[index] = detachNodeFromParent(nodes[index]);
+  }
+  return detached;
 }

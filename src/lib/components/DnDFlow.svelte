@@ -16,6 +16,8 @@
     type OnBeforeConnect,
     type OnBeforeDelete,
     type OnConnectEnd,
+    useEdges,
+    useNodes,
   } from "@xyflow/svelte";
 
 
@@ -110,6 +112,7 @@
     target: "pane" | "node" | "selection";
     delayBaselines: Record<string, number>;
     delayMultiplier: number;
+    canOptimizeTypingText: boolean;
   };
 
   type EdgeDropMenuState = {
@@ -135,6 +138,9 @@
     createdAt: string;
   };
 
+  const HISTORY_LIMIT = 80;
+  const MAX_SAVED_MOUSE_CLICKS = 24;
+
   // use $state.raw for performance as recommended by xyflow docs
   let nodes = $state.raw(initialNodes);
   let edges = $state.raw(initialEdges);
@@ -155,10 +161,16 @@
   let edgeDropMenu = $state<EdgeDropMenuState | undefined>();
   let edgeDropQuery = $state("");
   let edgeDropSearchInput = $state<HTMLInputElement | undefined>();
+  let cachedEdgeDropQuery: string | undefined;
+  let cachedEdgeDropTemplates = nodeTemplates;
   let ignoreNextPaneClick = false;
   let pasteIndex = 0;
   let applyingHistory = false;
   let historyTimer: ReturnType<typeof setTimeout> | undefined;
+  let pendingMousePosition: MousePositionPayload | undefined;
+  let mousePositionFrame: number | undefined;
+  let savedMouseClickId = 0;
+  let savedMouseClickVersion = $state(0);
 
   const valueSourceContext: ValueSourceContext = {
     getVariables: () => variables,
@@ -170,48 +182,74 @@
     const name = trimmedName || "Subflow";
     const now = new Date().toISOString();
 
-    submacros = submacros.map((submacro) =>
-      submacro.id === definitionId
-        ? {
-            ...submacro,
-            name,
-            updatedAt: now,
-          }
-        : submacro,
-    );
+    for (const submacro of submacros) {
+      if (submacro.id !== definitionId) continue;
+      submacro.name = name;
+      submacro.updatedAt = now;
+      break;
+    }
+    submacros = submacros;
 
-    nodes = nodes.map((node) => {
+    for (const node of nodes) {
       const data = node.data as { definitionId?: string } | undefined;
       if (
         (node.type === "subflowGroupNode" || node.type === "submacroNode") &&
         data?.definitionId === definitionId
       ) {
-        return {
-          ...node,
-          data: {
-            ...(node.data ?? {}),
-            title: rawName || name,
-          },
-        };
+        node.data.title = rawName || name;
       }
-
-      return node;
-    });
+    }
+    commitNodes();
   };
 
   setContext(SUBFLOW_RENAME_CONTEXT, renameSubflowDefinition);
   setContext(VALUE_SOURCE_CONTEXT, valueSourceContext);
 
-  function cloneData<T>(value: T): T {
-    return structuredClone(value);
+  function clearNodeSelection(nodeList: Node[]) {
+    let changed = false;
+    for (const node of nodeList) {
+      if (!node.selected) continue;
+      node.selected = false;
+      changed = true;
+    }
+    return changed;
+  }
+
+  function clearEdgeSelection(edgeList: Edge[]) {
+    let changed = false;
+    for (const edge of edgeList) {
+      if (!edge.selected) continue;
+      edge.selected = false;
+      changed = true;
+    }
+    return changed;
+  }
+
+  function edgeKey(
+    source: string,
+    sourceHandle: string | null | undefined,
+    target: string,
+    targetHandle: string | null | undefined,
+  ) {
+    return `${source}:${sourceHandle ?? ""}->${target}:${targetHandle ?? ""}`;
+  }
+
+  function commitNodes() {
+    nodes = nodes;
+    flowNodes.set(nodes.slice());
+  }
+
+  function commitEdges() {
+    edges = edges;
+    flowEdges.set(edges.slice());
   }
 
   function currentEditorSnapshot(): EditorSnapshot {
     return {
-      nodes: cloneData(nodes),
-      edges: cloneData(edges),
-      variables: cloneData(variables),
-      submacros: cloneData(submacros),
+      nodes: structuredClone(nodes),
+      edges: structuredClone(edges),
+      variables: structuredClone(variables),
+      submacros: structuredClone(submacros),
     };
   }
 
@@ -229,8 +267,11 @@
     const signature = snapshotSignature(snapshot);
     if (signature === lastHistorySignature) return;
 
-    undoStack = [...undoStack.slice(-79), lastHistorySnapshot];
-    redoStack = [];
+    undoStack.push(lastHistorySnapshot);
+    if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+    undoStack = undoStack;
+    redoStack.length = 0;
+    redoStack = redoStack;
     lastHistorySnapshot = snapshot;
     lastHistorySignature = signature;
   }
@@ -251,12 +292,13 @@
 
   function restoreSnapshot(snapshot: EditorSnapshot) {
     applyingHistory = true;
-    nodes = cloneData(snapshot.nodes);
-    edges = cloneData(snapshot.edges);
-    variables = cloneData(snapshot.variables);
-    submacros = cloneData(snapshot.submacros);
-    selectedNodes = [];
-    lastHistorySnapshot = cloneData(snapshot);
+    nodes = structuredClone(snapshot.nodes);
+    edges = structuredClone(snapshot.edges);
+    variables = structuredClone(snapshot.variables);
+    submacros = structuredClone(snapshot.submacros);
+    selectedNodes.length = 0;
+    selectedNodes = selectedNodes;
+    lastHistorySnapshot = structuredClone(snapshot);
     lastHistorySignature = snapshotSignature(snapshot);
     queueMicrotask(() => {
       applyingHistory = false;
@@ -265,12 +307,15 @@
 
   function undo() {
     flushHistoryCommit();
-    const snapshot = undoStack.at(-1);
+    const snapshot = undoStack[undoStack.length - 1];
     if (!snapshot) return;
 
     const current = currentEditorSnapshot();
-    undoStack = undoStack.slice(0, -1);
-    redoStack = [current, ...redoStack.slice(0, 79)];
+    undoStack.pop();
+    undoStack = undoStack;
+    redoStack.unshift(current);
+    if (redoStack.length > HISTORY_LIMIT) redoStack.length = HISTORY_LIMIT;
+    redoStack = redoStack;
     restoreSnapshot(snapshot);
     closeContextMenu();
   }
@@ -281,8 +326,11 @@
     if (!snapshot) return;
 
     const current = currentEditorSnapshot();
-    redoStack = redoStack.slice(1);
-    undoStack = [...undoStack.slice(-79), current];
+    redoStack.shift();
+    redoStack = redoStack;
+    undoStack.push(current);
+    if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+    undoStack = undoStack;
     restoreSnapshot(snapshot);
     closeContextMenu();
   }
@@ -369,7 +417,10 @@
   };
 
   const onBeforeDelete: OnBeforeDelete = async ({ nodes: deletedNodes }) => {
-    const deletedIds = new Set(deletedNodes.map((node) => node.id));
+    const deletedIds = new Set<string>();
+    for (const node of deletedNodes) {
+      deletedIds.add(node.id);
+    }
     if (deletedIds.size === 0) return true;
 
     deleteNodesWithBypass(deletedIds);
@@ -378,6 +429,8 @@
 
   // DnD Hook
   const { screenToFlowPosition, toObject, setViewport } = useSvelteFlow();
+  const flowNodes = useNodes();
+  const flowEdges = useEdges();
 
   let runner: MacroRunner | undefined = $state();
   let isRunning = $state(false);
@@ -399,7 +452,7 @@
 
       if (!runner) {
         runner = new MacroRunner(nodes, edges, variables, syncedSubmacros, (snapshot) => {
-          variableSnapshot = { ...snapshot };
+          variableSnapshot = snapshot;
         });
       }
       runner.updateGraph(nodes, edges, variables, syncedSubmacros);
@@ -489,16 +542,23 @@
       screenToFlowPosition({ x: 320, y: 120 }),
     );
 
-    const selectedRecordedNodes = graph.nodes.map((node) => ({
-      ...node,
-      selected: true,
-    }));
+    const selectedRecordedNodes = new Array<Node>(graph.nodes.length);
+    for (let index = 0; index < graph.nodes.length; index += 1) {
+      selectedRecordedNodes[index] = {
+        ...graph.nodes[index],
+        selected: true,
+      };
+    }
 
-    nodes = [
-      ...nodes.map((node) => ({ ...node, selected: false })),
-      ...selectedRecordedNodes,
-    ];
-    edges = [...edges, ...graph.edges];
+    clearNodeSelection(nodes);
+    for (const node of selectedRecordedNodes) {
+      nodes.push(node);
+    }
+    commitNodes();
+    for (const edge of graph.edges) {
+      edges.push(edge);
+    }
+    commitEdges();
     selectedNodes = selectedRecordedNodes;
     pendingRecordedMacro = undefined;
     recordedShortcut = "";
@@ -529,12 +589,47 @@
   }
 
   function clearSavedMouseClicks() {
-    savedMouseClicks = [];
+    savedMouseClicks.length = 0;
+    savedMouseClicks = savedMouseClicks;
+    savedMouseClickVersion += 1;
+  }
+
+  function scheduleMousePositionUpdate(position: MousePositionPayload) {
+    pendingMousePosition = position;
+    if (mousePositionFrame !== undefined) return;
+
+    mousePositionFrame = requestAnimationFrame(() => {
+      mousePositionFrame = undefined;
+      if (!pendingMousePosition) return;
+
+      currentMousePosition = pendingMousePosition;
+      pendingMousePosition = undefined;
+    });
+  }
+
+  function saveMouseClick(position: MousePositionPayload) {
+    savedMouseClickId += 1;
+    savedMouseClicks.unshift({
+      id: `${savedMouseClickId}`,
+      x: position.x,
+      y: position.y,
+      button: position.button,
+      createdAt: new Date().toLocaleTimeString(),
+    });
+    if (savedMouseClicks.length > MAX_SAVED_MOUSE_CLICKS) {
+      savedMouseClicks.length = MAX_SAVED_MOUSE_CLICKS;
+    }
+    savedMouseClicks = savedMouseClicks;
+    savedMouseClickVersion += 1;
   }
 
   onDestroy(() => {
     if (historyTimer) {
       clearTimeout(historyTimer);
+    }
+
+    if (mousePositionFrame !== undefined) {
+      cancelAnimationFrame(mousePositionFrame);
     }
 
     if (runner) {
@@ -565,7 +660,10 @@
   }
 
   function selectedNodeIdsWithDescendants() {
-    const copiedIds = new Set(selectedNodes.map((node) => node.id));
+    const copiedIds = new Set<string>();
+    for (const node of selectedNodes) {
+      copiedIds.add(node.id);
+    }
     let changed = true;
 
     while (changed) {
@@ -602,21 +700,28 @@
     const delayIds = new Set(Object.keys(contextMenu?.delayBaselines ?? {}));
     if (delayIds.size === 0) return;
 
-    const triggerEdges = edges.filter((edge) => edgeKind(edge) === "trigger");
+    const triggerEdges: Edge[] = [];
     const outgoingBySource = new Map<string, Edge[]>();
-    const keptEdges = edges.filter((edge) => !delayIds.has(edge.source) && !delayIds.has(edge.target));
-    const edgeKeys = new Set(
-      keptEdges.map(
-        (edge) =>
-          `${edge.source}:${edge.sourceHandle ?? ""}->${edge.target}:${edge.targetHandle ?? ""}`,
-      ),
-    );
+    const keptEdges: Edge[] = [];
+    const edgeKeys = new Set<string>();
     const bypassEdges: Edge[] = [];
 
-    for (const edge of triggerEdges) {
-      const sourceEdges = outgoingBySource.get(edge.source) ?? [];
-      sourceEdges.push(edge);
-      outgoingBySource.set(edge.source, sourceEdges);
+    for (const edge of edges) {
+      const isTrigger = edgeKind(edge) === "trigger";
+      if (isTrigger) {
+        triggerEdges.push(edge);
+        const sourceEdges = outgoingBySource.get(edge.source);
+        if (sourceEdges) {
+          sourceEdges.push(edge);
+        } else {
+          outgoingBySource.set(edge.source, [edge]);
+        }
+      }
+
+      if (!delayIds.has(edge.source) && !delayIds.has(edge.target)) {
+        keptEdges.push(edge);
+        edgeKeys.add(edgeKey(edge.source, edge.sourceHandle, edge.target, edge.targetHandle));
+      }
     }
 
     function reachableOutputs(nodeId: string, visited = new Set<string>()): Edge[] {
@@ -628,7 +733,9 @@
 
       for (const edge of outgoing) {
         if (delayIds.has(edge.target)) {
-          outputs.push(...reachableOutputs(edge.target, visited));
+          for (const output of reachableOutputs(edge.target, visited)) {
+            outputs.push(output);
+          }
         } else {
           outputs.push(edge);
         }
@@ -643,9 +750,14 @@
       for (const outgoingEdge of reachableOutputs(incomingEdge.target)) {
         if (outgoingEdge.target === incomingEdge.source) continue;
 
-        const edgeKey = `${incomingEdge.source}:${incomingEdge.sourceHandle ?? ""}->${outgoingEdge.target}:${outgoingEdge.targetHandle ?? ""}`;
-        if (edgeKeys.has(edgeKey)) continue;
-        edgeKeys.add(edgeKey);
+        const key = edgeKey(
+          incomingEdge.source,
+          incomingEdge.sourceHandle,
+          outgoingEdge.target,
+          outgoingEdge.targetHandle,
+        );
+        if (edgeKeys.has(key)) continue;
+        edgeKeys.add(key);
 
         bypassEdges.push(
           makeGraphEdge({
@@ -658,9 +770,26 @@
       }
     }
 
-    nodes = nodes.filter((node) => !delayIds.has(node.id));
-    edges = [...keptEdges, ...bypassEdges];
-    selectedNodes = selectedNodes.filter((node) => !delayIds.has(node.id));
+    let nodeWriteIndex = 0;
+    for (const node of nodes) {
+      if (delayIds.has(node.id)) continue;
+      nodes[nodeWriteIndex] = node;
+      nodeWriteIndex += 1;
+    }
+    nodes.length = nodeWriteIndex;
+    commitNodes();
+    for (const edge of bypassEdges) {
+      keptEdges.push(edge);
+    }
+    edges = keptEdges;
+    let selectedWriteIndex = 0;
+    for (const node of selectedNodes) {
+      if (delayIds.has(node.id)) continue;
+      selectedNodes[selectedWriteIndex] = node;
+      selectedWriteIndex += 1;
+    }
+    selectedNodes.length = selectedWriteIndex;
+    selectedNodes = selectedNodes;
     closeContextMenu();
   }
 
@@ -674,26 +803,30 @@
       delayMultiplier: multiplier,
     };
 
-    nodes = nodes.map((node) => {
+    for (const node of nodes) {
       const baseline = baselines[node.id];
-      if (baseline === undefined || node.type !== "delayNode") return node;
-
-      return {
-        ...node,
-        data: {
-          ...(node.data ?? {}),
-          delay: Math.round(baseline * multiplier),
-        },
-      };
-    });
+      if (baseline === undefined || node.type !== "delayNode") {
+        continue;
+      }
+      node.data.delay = Math.round(baseline * multiplier);
+    }
+    commitNodes();
   }
 
   function optimizeTypingTextSelection() {
     const runs = findTypingOptimizationRuns();
     if (runs.length === 0) return;
 
-    const consumedIds = new Set(runs.flatMap((run) => [...run.consumedIds]));
-    const replacementNodes = runs.map((run) => {
+    const consumedIds = new Set<string>();
+    for (const run of runs) {
+      for (const id of run.consumedIds) {
+        consumedIds.add(id);
+      }
+    }
+
+    const replacementNodes = new Array<Node>(runs.length);
+    for (let index = 0; index < runs.length; index += 1) {
+      const run = runs[index];
       const firstNode = run.nodes[0];
       const replacement: Node = {
         id: crypto.randomUUID(),
@@ -715,23 +848,21 @@
         replacement.origin = firstNode.origin;
       }
 
-      return replacement;
-    });
-    const replacementByRun = new Map(runs.map((run, index) => [run, replacementNodes[index]]));
-    const keptEdges = edges.filter(
-      (edge) => !consumedIds.has(edge.source) && !consumedIds.has(edge.target),
-    );
-    const edgeKeys = new Set(
-      keptEdges.map(
-        (edge) =>
-          `${edge.source}:${edge.sourceHandle ?? ""}->${edge.target}:${edge.targetHandle ?? ""}`,
-      ),
-    );
+      replacementNodes[index] = replacement;
+    }
+
+    const keptEdges: Edge[] = [];
+    const edgeKeys = new Set<string>();
+    for (const edge of edges) {
+      if (consumedIds.has(edge.source) || consumedIds.has(edge.target)) continue;
+      keptEdges.push(edge);
+      edgeKeys.add(edgeKey(edge.source, edge.sourceHandle, edge.target, edge.targetHandle));
+    }
     const replacementEdges: Edge[] = [];
 
-    for (const run of runs) {
-      const replacement = replacementByRun.get(run);
-      if (!replacement) continue;
+    for (let index = 0; index < runs.length; index += 1) {
+      const run = runs[index];
+      const replacement = replacementNodes[index];
 
       for (const incomingEdge of run.incomingEdges) {
         addReplacementEdge(
@@ -756,12 +887,28 @@
       }
     }
 
-    nodes = [
-      ...nodes.filter((node) => !consumedIds.has(node.id)).map((node) => ({ ...node, selected: false })),
-      ...replacementNodes,
-    ];
-    edges = [...keptEdges, ...replacementEdges];
-    selectedNodes = replacementNodes;
+    let nodeWriteIndex = 0;
+    for (const node of nodes) {
+      if (consumedIds.has(node.id)) continue;
+      if (node.selected) node.selected = false;
+      nodes[nodeWriteIndex] = node;
+      nodeWriteIndex += 1;
+    }
+    nodes.length = nodeWriteIndex;
+    for (const replacement of replacementNodes) {
+      nodes.push(replacement);
+    }
+
+    commitNodes();
+    for (const edge of replacementEdges) {
+      keptEdges.push(edge);
+    }
+    edges = keptEdges;
+    selectedNodes.length = 0;
+    for (const replacement of replacementNodes) {
+      selectedNodes.push(replacement);
+    }
+    selectedNodes = selectedNodes;
     closeContextMenu();
   }
 
@@ -781,8 +928,21 @@
     const selectedIds = selectedNodeIdsWithDescendants();
     if (selectedIds.size === 0) return [];
 
-    const nodesById = new Map(nodes.map((node) => [node.id, node]));
-    const triggerEdges = edges.filter((edge) => edgeKind(edge) === "trigger");
+    const nodesById = new Map<string, Node>();
+    for (const node of nodes) {
+      nodesById.set(node.id, node);
+    }
+
+    const triggerEdges: Edge[] = [];
+    const valueConnectedIds = new Set<string>();
+    for (const edge of edges) {
+      if (edgeKind(edge) === "trigger") {
+        triggerEdges.push(edge);
+      } else {
+        valueConnectedIds.add(edge.source);
+        valueConnectedIds.add(edge.target);
+      }
+    }
     const outgoingBySource = groupEdges(triggerEdges, "source");
     const incomingByTarget = groupEdges(triggerEdges, "target");
     const consumed = new Set<string>();
@@ -801,6 +961,7 @@
         nodesById,
         outgoingBySource,
         incomingByTarget,
+        valueConnectedIds,
       );
       if (!run) continue;
 
@@ -820,6 +981,7 @@
     nodesById: Map<string, Node>,
     outgoingBySource: Map<string, Edge[]>,
     incomingByTarget: Map<string, Edge[]>,
+    valueConnectedIds: Set<string>,
   ): TypingRun | undefined {
     const consumedIds = new Set<string>();
     const textParts: string[] = [];
@@ -853,8 +1015,12 @@
     }
 
     if (textParts.length < 2) return undefined;
-    const consumedNodes = [...consumedIds].map((id) => nodesById.get(id)).filter(Boolean) as Node[];
-    if (consumedNodes.some((node) => nodeHasValueEdge(node.id))) return undefined;
+    const consumedNodes: Node[] = [];
+    for (const id of consumedIds) {
+      if (valueConnectedIds.has(id)) return undefined;
+      const node = nodesById.get(id);
+      if (node) consumedNodes.push(node);
+    }
 
     const firstNode = nodesById.get(startNodeId);
     const lastNode = nodesById.get(lastNodeId);
@@ -864,13 +1030,23 @@
       text: textParts.join(""),
       nodes: consumedNodes,
       consumedIds,
-      incomingEdges: (incomingByTarget.get(firstNode.id) ?? []).filter(
-        (edge) => !consumedIds.has(edge.source),
-      ),
-      outgoingEdges: (outgoingBySource.get(lastNode.id) ?? []).filter(
-        (edge) => !consumedIds.has(edge.target),
-      ),
+      incomingEdges: unconsumedEdges(incomingByTarget.get(firstNode.id), consumedIds, "source"),
+      outgoingEdges: unconsumedEdges(outgoingBySource.get(lastNode.id), consumedIds, "target"),
     };
+  }
+
+  function unconsumedEdges(
+    edgeList: Edge[] | undefined,
+    consumedIds: Set<string>,
+    endpoint: "source" | "target",
+  ) {
+    const unconsumed: Edge[] = [];
+    if (!edgeList) return unconsumed;
+
+    for (const edge of edgeList) {
+      if (!consumedIds.has(edge[endpoint])) unconsumed.push(edge);
+    }
+    return unconsumed;
   }
 
   function nextPrintableKeyNode(
@@ -927,19 +1103,16 @@
     return outgoing.length === 1 ? outgoing[0].target : undefined;
   }
 
-  function nodeHasValueEdge(nodeId: string) {
-    return edges.some(
-      (edge) => edgeKind(edge) === "value" && (edge.source === nodeId || edge.target === nodeId),
-    );
-  }
-
   function groupEdges(edgeList: Edge[], key: "source" | "target") {
     const grouped = new Map<string, Edge[]>();
     for (const edge of edgeList) {
       const id = edge[key];
-      const group = grouped.get(id) ?? [];
-      group.push(edge);
-      grouped.set(id, group);
+      const group = grouped.get(id);
+      if (group) {
+        group.push(edge);
+      } else {
+        grouped.set(id, [edge]);
+      }
     }
     return grouped;
   }
@@ -952,9 +1125,9 @@
     target: string,
     targetHandle: string | null,
   ) {
-    const edgeKey = `${source}:${sourceHandle ?? ""}->${target}:${targetHandle ?? ""}`;
-    if (edgeKeys.has(edgeKey)) return;
-    edgeKeys.add(edgeKey);
+    const key = edgeKey(source, sourceHandle, target, targetHandle);
+    if (edgeKeys.has(key)) return;
+    edgeKeys.add(key);
     replacementEdges.push(makeGraphEdge({ source, sourceHandle, target, targetHandle }));
   }
 
@@ -962,19 +1135,48 @@
     const copiedIds = selectedNodeIdsWithDescendants();
     if (copiedIds.size === 0) return;
 
+    const copiedNodes: Node[] = [];
+    const copiedEdges: Edge[] = [];
+    for (const node of nodes) {
+      if (copiedIds.has(node.id)) copiedNodes.push(node);
+    }
+    for (const edge of edges) {
+      if (copiedIds.has(edge.source) && copiedIds.has(edge.target)) {
+        copiedEdges.push(edge);
+      }
+    }
+
     copiedGraph = {
-      nodes: cloneData(nodes.filter((node) => copiedIds.has(node.id))),
-      edges: cloneData(edges.filter((edge) => copiedIds.has(edge.source) && copiedIds.has(edge.target))),
+      nodes: structuredClone(copiedNodes),
+      edges: structuredClone(copiedEdges),
     };
     pasteIndex = 0;
     closeContextMenu();
   }
 
   function graphBounds(copiedNodes: Node[]) {
-    const rootNodes = copiedNodes.filter((node) => !node.parentId || !copiedNodes.some((copy) => copy.id === node.parentId));
-    const candidates = rootNodes.length > 0 ? rootNodes : copiedNodes;
-    const minX = Math.min(...candidates.map((node) => node.position.x));
-    const minY = Math.min(...candidates.map((node) => node.position.y));
+    const copiedIds = new Set<string>();
+    for (const node of copiedNodes) {
+      copiedIds.add(node.id);
+    }
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let rootCount = 0;
+    for (const node of copiedNodes) {
+      if (node.parentId && copiedIds.has(node.parentId)) continue;
+
+      rootCount += 1;
+      minX = Math.min(minX, node.position.x);
+      minY = Math.min(minY, node.position.y);
+    }
+
+    if (rootCount === 0) {
+      for (const node of copiedNodes) {
+        minX = Math.min(minX, node.position.x);
+        minY = Math.min(minY, node.position.y);
+      }
+    }
 
     return { minX, minY };
   }
@@ -982,8 +1184,12 @@
   function pasteSelection(position?: { x: number; y: number }) {
     if (!copiedGraph || copiedGraph.nodes.length === 0) return;
 
-    const copiedIds = new Set(copiedGraph.nodes.map((node) => node.id));
-    const idMap = new Map(copiedGraph.nodes.map((node) => [node.id, crypto.randomUUID()]));
+    const copiedIds = new Set<string>();
+    const idMap = new Map<string, string>();
+    for (const node of copiedGraph.nodes) {
+      copiedIds.add(node.id);
+      idMap.set(node.id, crypto.randomUUID());
+    }
     const bounds = graphBounds(copiedGraph.nodes);
     const fallbackOffset = 36 * (pasteIndex + 1);
     const offset = position
@@ -996,8 +1202,10 @@
           y: fallbackOffset,
         };
 
-    const pastedNodes = copiedGraph.nodes.map((node) => {
-      const nextNode = cloneData(node) as Node & {
+    const pastedNodes = new Array<Node>(copiedGraph.nodes.length);
+    for (let index = 0; index < copiedGraph.nodes.length; index += 1) {
+      const node = copiedGraph.nodes[index];
+      const nextNode = structuredClone(node) as Node & {
         parentId?: string;
         extent?: Node["extent"];
       };
@@ -1015,25 +1223,31 @@
         };
       }
 
-      return nextNode;
-    });
+      pastedNodes[index] = nextNode;
+    }
 
-    const pastedEdges = copiedGraph.edges.map((edge) => ({
-      ...cloneData(edge),
-      id: `e-${idMap.get(edge.source)}-${idMap.get(edge.target)}-${crypto.randomUUID()}`,
-      source: idMap.get(edge.source) ?? edge.source,
-      target: idMap.get(edge.target) ?? edge.target,
-      selected: false,
-    }));
+    const pastedEdges = new Array<Edge>(copiedGraph.edges.length);
+    for (let index = 0; index < copiedGraph.edges.length; index += 1) {
+      const edge = copiedGraph.edges[index];
+      pastedEdges[index] = {
+        ...structuredClone(edge),
+        id: `e-${idMap.get(edge.source)}-${idMap.get(edge.target)}-${crypto.randomUUID()}`,
+        source: idMap.get(edge.source) ?? edge.source,
+        target: idMap.get(edge.target) ?? edge.target,
+        selected: false,
+      };
+    }
 
-    nodes = [
-      ...nodes.map((node) => ({ ...node, selected: false })),
-      ...pastedNodes,
-    ];
-    edges = [
-      ...edges.map((edge) => ({ ...edge, selected: false })),
-      ...pastedEdges,
-    ];
+    clearNodeSelection(nodes);
+    for (const node of pastedNodes) {
+      nodes.push(node);
+    }
+    commitNodes();
+    clearEdgeSelection(edges);
+    for (const edge of pastedEdges) {
+      edges.push(edge);
+    }
+    commitEdges();
     selectedNodes = pastedNodes;
     pasteIndex += 1;
     closeContextMenu();
@@ -1044,44 +1258,75 @@
     if (selectedIds.size === 0) return;
 
     deleteNodesWithBypass(selectedIds);
-    selectedNodes = [];
+    selectedNodes.length = 0;
+    selectedNodes = selectedNodes;
     closeContextMenu();
   }
 
   function deleteNodesWithBypass(deletedIds: Set<string>) {
-    const nodeOrder = nodes.filter((node) => deletedIds.has(node.id));
-    let remainingNodes = [...nodes];
-    let nextEdges = [...edges];
+    const keptEdges: Edge[] = [];
+    const edgeKeys = new Set<string>();
+    const incomingByDeletedTarget = new Map<string, Edge[]>();
+    const outgoingByDeletedSource = new Map<string, Edge[]>();
 
-    for (const deletedNode of nodeOrder) {
-      const incomingEdges = nextEdges.filter(
-        (edge) => edgeKind(edge) === "trigger" && edge.target === deletedNode.id,
-      );
-      const outgoingEdges = nextEdges.filter(
-        (edge) => edgeKind(edge) === "trigger" && edge.source === deletedNode.id,
-      );
-      const connectedEdges = nextEdges.filter(
-        (edge) => edge.source === deletedNode.id || edge.target === deletedNode.id,
-      );
+    for (const edge of edges) {
+      const sourceDeleted = deletedIds.has(edge.source);
+      const targetDeleted = deletedIds.has(edge.target);
 
-      nextEdges = nextEdges.filter((edge) => !connectedEdges.includes(edge));
-      remainingNodes = remainingNodes.filter((node) => node.id !== deletedNode.id);
+      if (!sourceDeleted && !targetDeleted) {
+        keptEdges.push(edge);
+        edgeKeys.add(edgeKey(edge.source, edge.sourceHandle, edge.target, edge.targetHandle));
+        continue;
+      }
 
-      const edgeKeys = new Set(
-        nextEdges.map(
-          (edge) =>
-            `${edge.source}:${edge.sourceHandle ?? ""}->${edge.target}:${edge.targetHandle ?? ""}`,
-        ),
-      );
+      if (edgeKind(edge) !== "trigger") continue;
 
+      if (!sourceDeleted && targetDeleted) {
+        const incoming = incomingByDeletedTarget.get(edge.target);
+        if (incoming) {
+          incoming.push(edge);
+        } else {
+          incomingByDeletedTarget.set(edge.target, [edge]);
+        }
+      }
+
+      if (sourceDeleted) {
+        const outgoing = outgoingByDeletedSource.get(edge.source);
+        if (outgoing) {
+          outgoing.push(edge);
+        } else {
+          outgoingByDeletedSource.set(edge.source, [edge]);
+        }
+      }
+    }
+
+    const bypassEdges: Edge[] = [];
+    const reachableOutputs = (deletedNodeId: string, visited = new Set<string>()): Edge[] => {
+      if (visited.has(deletedNodeId)) return [];
+      visited.add(deletedNodeId);
+
+      const outputs: Edge[] = [];
+      const outgoing = outgoingByDeletedSource.get(deletedNodeId) ?? [];
+      for (const edge of outgoing) {
+        if (deletedIds.has(edge.target)) {
+          for (const output of reachableOutputs(edge.target, visited)) {
+            outputs.push(output);
+          }
+        } else {
+          outputs.push(edge);
+        }
+      }
+      return outputs;
+    };
+
+    for (const [deletedNodeId, incomingEdges] of incomingByDeletedTarget) {
+      const outgoingEdges = reachableOutputs(deletedNodeId);
       for (const incomingEdge of incomingEdges) {
         for (const outgoingEdge of outgoingEdges) {
-          if (incomingEdge.source === outgoingEdge.target) {
-            continue;
-          }
+          if (incomingEdge.source === outgoingEdge.target) continue;
 
           addReplacementEdge(
-            nextEdges,
+            bypassEdges,
             edgeKeys,
             incomingEdge.source,
             incomingEdge.sourceHandle ?? null,
@@ -1092,8 +1337,19 @@
       }
     }
 
-    nodes = remainingNodes;
-    edges = nextEdges;
+    let nodeWriteIndex = 0;
+    for (const node of nodes) {
+      if (deletedIds.has(node.id)) continue;
+      nodes[nodeWriteIndex] = node;
+      nodeWriteIndex += 1;
+    }
+    nodes.length = nodeWriteIndex;
+
+    commitNodes();
+    for (const edge of bypassEdges) {
+      keptEdges.push(edge);
+    }
+    edges = keptEdges;
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -1126,19 +1382,10 @@
     window.addEventListener("keydown", handleKeyDown);
     let unlistenMousePosition: (() => void) | undefined;
 
-    void listenEvent<MousePositionPayload>("mouse_position", (event) => {
-      currentMousePosition = event.payload;
-      if (event.payload.clicked) {
-        savedMouseClicks = [
-          {
-            id: crypto.randomUUID(),
-            x: event.payload.x,
-            y: event.payload.y,
-            button: event.payload.button,
-            createdAt: new Date().toLocaleTimeString(),
-          },
-          ...savedMouseClicks,
-        ].slice(0, 24);
+    void listenEvent<MousePositionPayload>("mouse_position", ({ payload }) => {
+      scheduleMousePositionUpdate(payload);
+      if (payload.clicked) {
+        saveMouseClick(payload);
       }
     }).then((unlisten) => {
       unlistenMousePosition = unlisten;
@@ -1267,19 +1514,24 @@
   }
 
   function findSubflowGroupAt(position: { x: number; y: number }) {
-    return [...nodes].reverse().find((node) => {
-      if (node.type !== "subflowGroupNode") return false;
+    for (let index = nodes.length - 1; index >= 0; index -= 1) {
+      const node = nodes[index];
+      if (node.type !== "subflowGroupNode") continue;
 
       const width = nodeDimension(node, "width");
       const height = nodeDimension(node, "height");
 
-      return (
+      if (
         position.x >= node.position.x &&
         position.x <= node.position.x + width &&
         position.y >= node.position.y &&
         position.y <= node.position.y + height
-      );
-    });
+      ) {
+        return node;
+      }
+    }
+
+    return undefined;
   }
 
   function createNodeAtPosition(
@@ -1319,16 +1571,26 @@
     });
     const newNode = createNodeAtPosition(type, nodeData, position);
 
-    nodes = [...nodes, newNode];
+    nodes.push(newNode);
+    commitNodes();
   }
 
   function filteredEdgeDropTemplates() {
     const query = edgeDropQuery.trim().toLowerCase();
-    if (!query) return nodeTemplates;
+    if (query === cachedEdgeDropQuery) return cachedEdgeDropTemplates;
 
-    return nodeTemplates.filter((template) =>
-      `${template.label} ${template.category}`.toLowerCase().includes(query),
-    );
+    cachedEdgeDropQuery = query;
+    if (!query) {
+      cachedEdgeDropTemplates = nodeTemplates;
+      return cachedEdgeDropTemplates;
+    }
+
+    cachedEdgeDropTemplates = [];
+    for (const template of nodeTemplates) {
+      const searchable = `${template.label} ${template.category}`.toLowerCase();
+      if (searchable.includes(query)) cachedEdgeDropTemplates.push(template);
+    }
+    return cachedEdgeDropTemplates;
   }
 
   function closeEdgeDropMenu() {
@@ -1341,7 +1603,7 @@
 
     const newNode = createNodeAtPosition(
       template.type,
-      cloneData(template.data),
+      structuredClone(template.data),
       edgeDropMenu.flowPosition,
     );
     const newEdge = makeGraphEdge({
@@ -1352,12 +1614,15 @@
     });
 
     const selectedNewNode = { ...newNode, selected: true };
-    nodes = [
-      ...nodes.map((node) => ({ ...node, selected: false })),
-      selectedNewNode,
-    ];
-    edges = [...edges.map((edge) => ({ ...edge, selected: false })), newEdge];
-    selectedNodes = [selectedNewNode];
+    clearNodeSelection(nodes);
+    nodes.push(selectedNewNode);
+    commitNodes();
+    clearEdgeSelection(edges);
+    edges.push(newEdge);
+    commitEdges();
+    selectedNodes.length = 0;
+    selectedNodes.push(selectedNewNode);
+    selectedNodes = selectedNodes;
     closeEdgeDropMenu();
   }
 
@@ -1382,6 +1647,7 @@
       target,
       delayBaselines: selectedDelayBaselines(),
       delayMultiplier: 1,
+      canOptimizeTypingText: canOptimizeTypingTextSelection(),
     };
   }
 
@@ -1403,12 +1669,22 @@
   }
 
   function handleNodeContextMenu({ event, node }: { event: MouseEvent; node: Node }) {
-    if (!selectedNodes.some((selectedNode) => selectedNode.id === node.id)) {
-      nodes = nodes.map((candidate) => ({
-        ...candidate,
-        selected: candidate.id === node.id,
-      }));
-      selectedNodes = [node];
+    let nodeAlreadySelected = false;
+    for (const selectedNode of selectedNodes) {
+      if (selectedNode.id === node.id) {
+        nodeAlreadySelected = true;
+        break;
+      }
+    }
+
+    if (!nodeAlreadySelected) {
+      for (const candidate of nodes) {
+        candidate.selected = candidate.id === node.id;
+      }
+      commitNodes();
+      selectedNodes.length = 0;
+      selectedNodes.push(node);
+      selectedNodes = selectedNodes;
     }
 
     openContextMenu(event, "node");
@@ -1423,10 +1699,12 @@
     });
     if (!result) return;
 
-    submacros = [...submacros, result.submacro];
+    submacros.push(result.submacro);
+    submacros = submacros;
     nodes = result.nodes;
     edges = result.edges;
-    selectedNodes = [];
+    selectedNodes.length = 0;
+    selectedNodes = selectedNodes;
     closeContextMenu();
   }
 
@@ -1436,15 +1714,13 @@
       y: window.innerHeight / 2,
     });
 
-    nodes = [
-      ...nodes,
-      {
-        id: crypto.randomUUID(),
-        type: "submacroNode",
-        position,
-        data: submacroNodeData(definition),
-      },
-    ];
+    nodes.push({
+      id: crypto.randomUUID(),
+      type: "submacroNode",
+      position,
+      data: submacroNodeData(definition),
+    });
+    commitNodes();
   }
 </script>
 
@@ -1577,15 +1853,17 @@
             </button>
           </div>
           <div class="mouse-click-list">
-            {#each savedMouseClicks as click (click.id)}
-              <div class="mouse-click-row">
-                <span>{click.button ?? "mouse"}</span>
-                <span>{click.x}, {click.y}</span>
-                <small>{click.createdAt}</small>
-              </div>
-            {:else}
-              <div class="mouse-click-empty">No clicks saved.</div>
-            {/each}
+            {#key savedMouseClickVersion}
+              {#each savedMouseClicks as click (click.id)}
+                <div class="mouse-click-row">
+                  <span>{click.button ?? "mouse"}</span>
+                  <span>{click.x}, {click.y}</span>
+                  <small>{click.createdAt}</small>
+                </div>
+              {:else}
+                <div class="mouse-click-empty">No clicks saved.</div>
+              {/each}
+            {/key}
           </div>
         </div>
       {/if}
@@ -1644,7 +1922,7 @@
       <div class="menu-separator"></div>
       <button
         role="menuitem"
-        disabled={!canOptimizeTypingTextSelection()}
+        disabled={!contextMenu.canOptimizeTypingText}
         onclick={optimizeTypingTextSelection}
       >
         Optimize Typing Text

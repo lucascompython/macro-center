@@ -235,8 +235,9 @@ export class MacroRunner {
       await unregisterAll();
       this.registeredShortcuts = [];
 
-      const keyBindNodes = this.nodes.filter((node) => node.type === "keyBindNode");
-      for (const node of keyBindNodes) {
+      for (const node of this.nodes) {
+        if (node.type !== "keyBindNode") continue;
+
         const shortcut = node.data.shortcut as string | undefined;
         if (!shortcut) continue;
 
@@ -279,8 +280,9 @@ export class MacroRunner {
   }
 
   private rebuildSubmacroIndexes() {
-    this.submacroGraphs = new Map(
-      this.submacros.map((submacro) => [
+    const graphs = new Map<string, GraphIndex>();
+    for (const submacro of this.submacros) {
+      graphs.set(
         submacro.id,
         new GraphIndex(
           submacro.nodes,
@@ -288,8 +290,9 @@ export class MacroRunner {
           submacro.boundaryOutputs,
           submacro.boundaryValueInputs,
         ),
-      ]),
-    );
+      );
+    }
+    this.submacroGraphs = graphs;
   }
 
   private async executeNode(nodeId: string, context: ExecutionContext): Promise<void> {
