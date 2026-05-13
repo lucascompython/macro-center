@@ -2137,6 +2137,7 @@ dependencies = [
 name = "macro-center"
 version = "0.1.0"
 dependencies = [
+ "indexmap 1.9.3",
  "libmacrocenter",
  "serde",
  "serde_json",
