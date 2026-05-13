@@ -28,8 +28,3 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
-indexmap = { version = "1.9.3", features = ["std"] }
-
-
-[patch.crates-io]
-indexmap = { version = "1.9.3", features = ["std"] }
