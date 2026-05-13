@@ -163,8 +163,6 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - Fix the Keybind node to work with numpad keys
 - Fix the Keybind node to work with mouse buttons
 
-- Add a Comment node for users to add notes and explanations to their macros, this would be especially useful for complex macros or for sharing macros with others.
-
 - Create C header
 - See about integrating boltffi
 - see why bun and deno don't really work
@@ -172,6 +170,10 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - publish packages to crates.io, pypi, npm and luarocks with proper CI
 - update rust example
 - add a cargo profile for the macrocenter app and another for the lib
-- Improve xtask
 
+- Add a Comment node or a way for users to add comments for users to add notes and explanations to their macros, this would be especially useful for complex macros or for sharing macros with others.
+- Add CLI support to run macros from the command line, this would allow users to integrate macros into their existing workflows and automate tasks without needing to open the Macro Center application.
 - Add a way to export macros as standalone scripts that can be run without the Macro Center application, this would be useful for sharing macros with others who don't have the app installed. Either by compiling them to native executables or by creating a small lightweight headless runtime that can execute the macros without the need for the full application.
+- Add a cmd node that can run arbitrary shell commands
+- Scheduler node that can run macros at specific times
+- Image, OCR and Pixel change recognition
