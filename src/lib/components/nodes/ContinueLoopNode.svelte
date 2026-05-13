@@ -1,20 +1,20 @@
 <script lang="ts">
-	import BaseNode from './BaseNode.svelte';
-	import type { ContinueLoopNodeData } from '$lib/types';
+  import BaseNode from "./BaseNode.svelte";
+  import type { ContinueLoopNodeData } from "$lib/types";
 
-	interface Props {
-		id: string;
-		data: ContinueLoopNodeData;
-	}
+  interface Props {
+    id: string;
+    data: ContinueLoopNodeData;
+  }
 
-	let { id, data }: Props = $props();
+  let { id, data }: Props = $props();
 </script>
 
 <BaseNode
-	{id}
-	data={{
-		title: data.title ?? 'Continue',
-		subline: data.subline ?? 'Start the next iteration',
-		enableSource: false
-	}}
+  {id}
+  data={{
+    title: data.title ?? "Continue",
+    subline: data.subline ?? "Start the next iteration",
+    enableSource: false,
+  }}
 />

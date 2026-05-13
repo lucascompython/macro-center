@@ -69,14 +69,7 @@ export interface ConditionalNodeData extends BaseNodeData {
   conditionExpression?: ConditionExpression;
 }
 
-export type ValueType =
-  | "boolean"
-  | "number"
-  | "text"
-  | "key"
-  | "mouseButton"
-  | "point"
-  | "list";
+export type ValueType = "boolean" | "number" | "text" | "key" | "mouseButton" | "point" | "list";
 
 export type VariableScope = "macro" | "local" | "persistent";
 
@@ -85,13 +78,7 @@ export interface PointValue {
   y: number;
 }
 
-export type MacroValue =
-  | string
-  | number
-  | boolean
-  | PointValue
-  | MacroValue[]
-  | null;
+export type MacroValue = string | number | boolean | PointValue | MacroValue[] | null;
 
 export interface VariableDefinition {
   id: string;

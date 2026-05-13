@@ -1,10 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Edge, Node } from "@xyflow/svelte";
-import {
-  register,
-  unregisterAll,
-  type ShortcutEvent,
-} from "@tauri-apps/plugin-global-shortcut";
+import { register, unregisterAll, type ShortcutEvent } from "@tauri-apps/plugin-global-shortcut";
 import {
   FLOW_OUT_HANDLE,
   edgeKind,
@@ -88,10 +84,7 @@ class GraphIndex {
     }
 
     for (const input of boundaryValueInputs) {
-      this.boundaryValueInputs.set(
-        keyFor(input.targetNodeId, input.targetHandle),
-        input.inputId,
-      );
+      this.boundaryValueInputs.set(keyFor(input.targetNodeId, input.targetHandle), input.inputId);
     }
   }
 
@@ -402,7 +395,8 @@ export class MacroRunner {
   }
 
   private async executeDelayNode(node: Node, context: ExecutionContext) {
-    const delayMs = Number(this.getInputValue(node, "delay", node.data.delay ?? 1000, context)) || 0;
+    const delayMs =
+      Number(this.getInputValue(node, "delay", node.data.delay ?? 1000, context)) || 0;
     await this.delay(Math.max(0, delayMs));
   }
 
@@ -440,7 +434,7 @@ export class MacroRunner {
         next = `${current ?? ""}${inputValue ?? ""}`;
         break;
       case "toggle":
-        next = !Boolean(current);
+        next = !current;
         break;
       case "clear":
         next = null;
@@ -459,7 +453,9 @@ export class MacroRunner {
   private async executeRepeatLoopNode(node: Node, context: ExecutionContext) {
     const iterations = Math.max(
       0,
-      Math.floor(Number(this.getInputValue(node, "iterations", node.data.iterations ?? 0, context)) || 0),
+      Math.floor(
+        Number(this.getInputValue(node, "iterations", node.data.iterations ?? 0, context)) || 0,
+      ),
     );
     const indexName = String(node.data.indexVariable ?? "index");
 
@@ -644,7 +640,10 @@ export class MacroRunner {
     return evaluateConditionValues(left, expression.operator, right);
   }
 
-  private evaluateOperand(operand: ValueOperand | undefined, context: ExecutionContext): MacroValue {
+  private evaluateOperand(
+    operand: ValueOperand | undefined,
+    context: ExecutionContext,
+  ): MacroValue {
     if (!operand) return null;
     if (operand.source === "variable") {
       return context.getVariable(operand.variableName ?? "");

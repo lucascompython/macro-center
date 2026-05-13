@@ -21,9 +21,9 @@ export const initialNodes: Node[] = [
     position: { x: 350, y: 100 },
     type: "typeNode",
     data: {
-      title: 'Type Text',
+      title: "Type Text",
       subline: 'Types "Hello World"',
-      text: 'Hello World!'
+      text: "Hello World!",
     },
   },
   {
@@ -96,12 +96,68 @@ export const initialNodes: Node[] = [
 ];
 
 export const initialEdges: Edge[] = [
-  { id: "e1-2", source: "1", sourceHandle: FLOW_OUT_HANDLE, target: "2", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e1-4", source: "1", sourceHandle: FLOW_OUT_HANDLE, target: "4", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e2-3", source: "2", sourceHandle: FLOW_OUT_HANDLE, target: "3", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e4-5", source: "4", sourceHandle: FLOW_OUT_HANDLE, target: "5", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e3-6", source: "3", sourceHandle: FLOW_OUT_HANDLE, target: "6", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e5-6", source: "5", sourceHandle: FLOW_OUT_HANDLE, target: "6", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e6-7", source: "6", sourceHandle: FLOW_OUT_HANDLE, target: "7", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
-  { id: "e6-8", source: "6", sourceHandle: FLOW_OUT_HANDLE, target: "8", targetHandle: FLOW_IN_HANDLE, data: { kind: "trigger" } },
+  {
+    id: "e1-2",
+    source: "1",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "2",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e1-4",
+    source: "1",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "4",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e2-3",
+    source: "2",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "3",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e4-5",
+    source: "4",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "5",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e3-6",
+    source: "3",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "6",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e5-6",
+    source: "5",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "6",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e6-7",
+    source: "6",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "7",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
+  {
+    id: "e6-8",
+    source: "6",
+    sourceHandle: FLOW_OUT_HANDLE,
+    target: "8",
+    targetHandle: FLOW_IN_HANDLE,
+    data: { kind: "trigger" },
+  },
 ];

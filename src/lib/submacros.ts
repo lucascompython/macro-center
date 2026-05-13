@@ -7,11 +7,7 @@ import {
   valueHandle,
   valueHandleName,
 } from "$lib/graph";
-import type {
-  SubmacroDefinition,
-  SubmacroTriggerOutput,
-  SubmacroValuePort,
-} from "$lib/types";
+import type { SubmacroDefinition, SubmacroTriggerOutput, SubmacroValuePort } from "$lib/types";
 
 interface CreateSubmacroOptions {
   nodes: Node[];
@@ -206,10 +202,7 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.source}:${sourceHandle}`;
     let outputId = triggerOutputBySource.get(mapKey);
     if (!outputId) {
-      outputId = uniquePortId(
-        portLabelFromHandle(sourceHandle, "done"),
-        usedTriggerOutputIds,
-      );
+      outputId = uniquePortId(portLabelFromHandle(sourceHandle, "done"), usedTriggerOutputIds);
       triggerOutputBySource.set(mapKey, outputId);
       triggerOutputs.push({
         id: outputId,
@@ -237,10 +230,7 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.target}:${targetHandle}`;
     let inputId = valueInputByTarget.get(mapKey);
     if (!inputId) {
-      inputId = uniquePortId(
-        valueHandleName(targetHandle) ?? "input",
-        usedValueInputIds,
-      );
+      inputId = uniquePortId(valueHandleName(targetHandle) ?? "input", usedValueInputIds);
       valueInputByTarget.set(mapKey, inputId);
       valueInputs.push({
         id: inputId,
@@ -266,10 +256,7 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.source}:${sourceHandle}`;
     let outputId = valueOutputBySource.get(mapKey);
     if (!outputId) {
-      outputId = uniquePortId(
-        valueHandleName(sourceHandle) ?? "value",
-        usedValueOutputIds,
-      );
+      outputId = uniquePortId(valueHandleName(sourceHandle) ?? "value", usedValueOutputIds);
       valueOutputBySource.set(mapKey, outputId);
       valueOutputs.push({
         id: outputId,
@@ -360,7 +347,7 @@ export function createSubmacroFromSelectionModel({
   for (const edge of internalEdges) {
     rewrittenEdges.push({
       ...edge,
-      data: { ...(edge.data ?? {}), kind: edgeKind(edge) },
+      data: { ...edge.data, kind: edgeKind(edge) },
     });
   }
 
@@ -379,7 +366,7 @@ export function createSubmacroFromSelectionModel({
         }),
         target: submacroNodeId,
         targetHandle: valueHandle(inputId),
-        data: { ...(edge.data ?? {}), kind: "value" },
+        data: { ...edge.data, kind: "value" },
         animated: true,
       });
       continue;
@@ -394,7 +381,7 @@ export function createSubmacroFromSelectionModel({
       }),
       target: submacroNodeId,
       targetHandle: FLOW_IN_HANDLE,
-      data: { ...(edge.data ?? {}), kind: "trigger" },
+      data: { ...edge.data, kind: "trigger" },
     });
   }
 
@@ -413,7 +400,7 @@ export function createSubmacroFromSelectionModel({
         }),
         source: submacroNodeId,
         sourceHandle: valueHandle(outputId),
-        data: { ...(edge.data ?? {}), kind: "value" },
+        data: { ...edge.data, kind: "value" },
         animated: true,
       });
       continue;
@@ -421,8 +408,7 @@ export function createSubmacroFromSelectionModel({
 
     const sourceHandle = edge.sourceHandle ?? FLOW_OUT_HANDLE;
     const outputId =
-      triggerOutputBySource.get(`${edge.source}:${sourceHandle}`) ??
-      triggerOutputs[0].id;
+      triggerOutputBySource.get(`${edge.source}:${sourceHandle}`) ?? triggerOutputs[0].id;
     rewrittenEdges.push({
       ...edge,
       id: makeEdgeId({
@@ -432,18 +418,12 @@ export function createSubmacroFromSelectionModel({
       }),
       source: submacroNodeId,
       sourceHandle: submacroOutputHandle(outputId),
-      data: { ...(edge.data ?? {}), kind: "trigger" },
+      data: { ...edge.data, kind: "trigger" },
     });
   }
 
   return {
-    nodes: createSubflowNodeList(
-      nodes,
-      selectedIds,
-      subflowGroupNode,
-      groupedNodes,
-      submacroNode,
-    ),
+    nodes: createSubflowNodeList(nodes, selectedIds, subflowGroupNode, groupedNodes, submacroNode),
     edges: rewrittenEdges,
     submacro,
   };
@@ -523,8 +503,7 @@ export function syncSubmacroDefinitionsFromSubflows(
       name,
       nodes: detachNodesFromParents(childNodes),
       edges: structuredClone(internalEdges),
-      updatedAt:
-        name === submacro.name ? submacro.updatedAt : new Date().toISOString(),
+      updatedAt: name === submacro.name ? submacro.updatedAt : new Date().toISOString(),
     };
   }
 

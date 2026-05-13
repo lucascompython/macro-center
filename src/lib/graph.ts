@@ -37,9 +37,7 @@ export function connectionKindFromHandles(
   sourceHandle?: string | null,
   targetHandle?: string | null,
 ): ConnectionKind {
-  return isValueHandle(sourceHandle) || isValueHandle(targetHandle)
-    ? "value"
-    : "trigger";
+  return isValueHandle(sourceHandle) || isValueHandle(targetHandle) ? "value" : "trigger";
 }
 
 export function edgeKind(edge: Edge | Connection): ConnectionKind {
@@ -65,10 +63,7 @@ export function normalizeTriggerHandle(handle?: string | null) {
 }
 
 export function makeGraphEdge(connection: Connection): Edge {
-  const kind = connectionKindFromHandles(
-    connection.sourceHandle,
-    connection.targetHandle,
-  );
+  const kind = connectionKindFromHandles(connection.sourceHandle, connection.targetHandle);
 
   return {
     ...connection,

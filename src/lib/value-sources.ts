@@ -89,7 +89,9 @@ export function resolveConnectedValuePreview(
   void store.edges;
 
   const targetHandle = valueHandle(inputName);
-  const connections = store.connectionLookup.get(connectionLookupKey(nodeId, "target", targetHandle));
+  const connections = store.connectionLookup.get(
+    connectionLookupKey(nodeId, "target", targetHandle),
+  );
   const connection = connections?.values().next().value;
   if (!connection) return undefined;
 

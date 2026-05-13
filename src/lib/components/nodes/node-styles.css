@@ -1,245 +1,243 @@
 /* Svelte Flow theme overrides - Dark theme matching auto-spammer */
 
 .svelte-flow {
-	touch-action: none;
-	--bg-color: rgb(17, 17, 17);
-	--text-color: rgb(243, 244, 246);
-	--node-border-radius: 10px;
-	--node-box-shadow:
-		10px 0 15px rgba(42, 138, 246, 0.3),
-		-10px 0 15px rgba(233, 42, 103, 0.3);
-	background-color: var(--bg-color) !important;
-	color: var(--text-color);
+  touch-action: none;
+  --bg-color: rgb(17, 17, 17);
+  --text-color: rgb(243, 244, 246);
+  --node-border-radius: 10px;
+  --node-box-shadow: 10px 0 15px rgba(42, 138, 246, 0.3), -10px 0 15px rgba(233, 42, 103, 0.3);
+  background-color: var(--bg-color) !important;
+  color: var(--text-color);
 
-	/* Override default CSS variables */
-	--xy-node-background-color-default: var(--bg-color);
-	--xy-node-border-default: none;
-	--xy-edge-stroke-default: url(#edge-gradient);
-	--xy-edge-stroke-width-default: 2;
-	--xy-handle-background-color-default: #1a192b;
-	--xy-handle-border-color-default: #fff;
-	--xy-minimap-background-color-default: #1a1a1a;
-	--xy-background-pattern-line-color-default: #242424;
-	--xy-controls-button-background-color-default: var(--bg-color);
-	--xy-controls-button-color-default: var(--text-color);
-	--xy-controls-button-border-color-default: #95679e;
+  /* Override default CSS variables */
+  --xy-node-background-color-default: var(--bg-color);
+  --xy-node-border-default: none;
+  --xy-edge-stroke-default: url(#edge-gradient);
+  --xy-edge-stroke-width-default: 2;
+  --xy-handle-background-color-default: #1a192b;
+  --xy-handle-border-color-default: #fff;
+  --xy-minimap-background-color-default: #1a1a1a;
+  --xy-background-pattern-line-color-default: #242424;
+  --xy-controls-button-background-color-default: var(--bg-color);
+  --xy-controls-button-color-default: var(--text-color);
+  --xy-controls-button-border-color-default: #95679e;
 }
 
 .svelte-flow__node {
-	border-radius: var(--node-border-radius);
-	min-width: 150px;
-	font-family: 'Fira Mono', 'JetBrains Mono', Monospace;
-	font-weight: 500;
-	letter-spacing: -0.2px;
-	box-shadow: var(--node-box-shadow);
+  border-radius: var(--node-border-radius);
+  min-width: 150px;
+  font-family: "Fira Mono", "JetBrains Mono", Monospace;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  box-shadow: var(--node-box-shadow);
 }
 
 .svelte-flow__node-subflowGroupNode {
-	box-shadow: none;
-	font-weight: 500;
-	min-width: 0;
+  box-shadow: none;
+  font-weight: 500;
+  min-width: 0;
 }
 
 .svelte-flow__node .wrapper {
-	overflow: hidden;
-	padding: 2px;
-	position: relative;
-	border-radius: var(--node-border-radius);
+  overflow: hidden;
+  padding: 2px;
+  position: relative;
+  border-radius: var(--node-border-radius);
 }
 
 /* Gradient border animation */
 .gradient:before {
-	content: '';
-	position: absolute;
-	padding-bottom: calc(100% * 1.41421356237);
-	width: calc(100% * 1.41421356237);
-	background: conic-gradient(
-		from -160deg at 50% 50%,
-		#e92a67 0deg,
-		#a853ba 120deg,
-		#2a8af6 240deg,
-		#e92a67 360deg
-	);
-	left: 50%;
-	top: 50%;
-	transform: translate(-50%, -50%);
-	border-radius: 100%;
+  content: "";
+  position: absolute;
+  padding-bottom: calc(100% * 1.41421356237);
+  width: calc(100% * 1.41421356237);
+  background: conic-gradient(
+    from -160deg at 50% 50%,
+    #e92a67 0deg,
+    #a853ba 120deg,
+    #2a8af6 240deg,
+    #e92a67 360deg
+  );
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 100%;
 }
 
 /* Animated gradient on hover/selected */
 .svelte-flow__node.selected .wrapper.gradient:before,
 .svelte-flow__node:hover .wrapper.gradient:before {
-	content: '';
-	background: conic-gradient(
-		from -160deg at 50% 50%,
-		#e92a67 0deg,
-		#a853ba 120deg,
-		#2a8af6 240deg,
-		rgba(42, 138, 246, 0) 360deg
-	);
-	animation: spinner 4s linear infinite;
-	transform: translate(-50%, -50%) rotate(0deg);
-	z-index: -1;
+  content: "";
+  background: conic-gradient(
+    from -160deg at 50% 50%,
+    #e92a67 0deg,
+    #a853ba 120deg,
+    #2a8af6 240deg,
+    rgba(42, 138, 246, 0) 360deg
+  );
+  animation: spinner 4s linear infinite;
+  transform: translate(-50%, -50%) rotate(0deg);
+  z-index: -1;
 }
 
 @keyframes spinner {
-	100% {
-		transform: translate(-50%, -50%) rotate(-360deg);
-	}
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
 }
 
 .svelte-flow__node .inner {
-	background: var(--bg-color);
-	padding: 0.5rem;
-	border-radius: var(--node-border-radius);
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	flex-grow: 1;
-	position: relative;
+  background: var(--bg-color);
+  padding: 0.5rem;
+  border-radius: var(--node-border-radius);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-grow: 1;
+  position: relative;
 }
 
 .svelte-flow__node .title {
-	font-size: 1.5rem;
-	margin-bottom: 2px;
-	line-height: 1;
+  font-size: 1.5rem;
+  margin-bottom: 2px;
+  line-height: 1;
 }
 
 .svelte-flow__node .subline {
-	font-size: 12px;
-	color: #777;
+  font-size: 12px;
+  color: #777;
 }
 
 /* Handle styling */
 .svelte-flow__handle {
-	width: 0.75rem;
-	height: 0.75rem;
-	border-width: 2px;
-	box-shadow: var(--node-box-shadow);
-	transition: 0.3s;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-width: 2px;
+  box-shadow: var(--node-box-shadow);
+  transition: 0.3s;
 }
 
 .svelte-flow__node:focus {
-	outline: none;
+  outline: none;
 }
 
 /* Edge gradient styling */
 .svelte-flow__edge .svelte-flow__edge-path {
-	stroke: url(#edge-gradient);
-	stroke-width: 2;
-	stroke-opacity: 0.75;
+  stroke: url(#edge-gradient);
+  stroke-width: 2;
+  stroke-opacity: 0.75;
 }
 
 /* Controls styling */
 .svelte-flow__controls button {
-	background-color: var(--bg-color);
-	color: var(--text-color);
-	border: 1px solid #95679e;
-	border-bottom: none;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid #95679e;
+  border-bottom: none;
 }
 
 .svelte-flow__controls button:hover {
-	background-color: rgb(37, 37, 37);
+  background-color: rgb(37, 37, 37);
 }
 
 .svelte-flow__controls button:first-child {
-	border-radius: 5px 5px 0 0;
+  border-radius: 5px 5px 0 0;
 }
 
 .svelte-flow__controls button:last-child {
-	border-bottom: 1px solid #95679e;
-	border-radius: 0 0 5px 5px;
+  border-bottom: 1px solid #95679e;
+  border-radius: 0 0 5px 5px;
 }
 
 .svelte-flow__controls button path {
-	fill: var(--text-color);
+  fill: var(--text-color);
 }
 
 /* Handle connection states */
 .svelte-flow__handle.connectingto {
-	background: #ff6060;
+  background: #ff6060;
 }
 
 .svelte-flow__handle.valid {
-	background: #27d209;
+  background: #27d209;
 }
 
 .svelte-flow__handle.target:hover {
-	border-color: #e92a67;
-	box-shadow: 0 0 10px #e92a67;
+  border-color: #e92a67;
+  box-shadow: 0 0 10px #e92a67;
 }
 
 .svelte-flow__handle.source:hover {
-	border-color: #2a8af6;
-	box-shadow: 0 0 10px #2a8af6;
+  border-color: #2a8af6;
+  box-shadow: 0 0 10px #2a8af6;
 }
 
 /* Node input styling */
 .input-container {
-	display: flex;
-	align-items: center;
-	margin-left: 0.5rem;
-	margin-top: 0.25rem;
-	margin-bottom: 0.25rem;
-	font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
 }
 
 .input-container span {
-	color: #e0e0e0;
-	font-size: 0.9rem;
-	font-weight: 500;
-	margin-right: 0.5rem;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
 }
 
 .input-container input[type="text"] {
-	background: none;
-	outline: none;
-	border: none;
-	color: white;
-	cursor: text;
-	border-radius: 0.25rem;
-	background: #4c4d4f;
-	min-width: 4rem;
-	max-width: 180px;
-	padding: 0.1rem 0.25rem;
-	margin-left: 0.5rem;
-	border: 1px solid transparent;
-	transition: border 0.2s ease;
-	font-size: 0.9rem;
-	font-weight: 400;
-	font-family: inherit;
+  background: none;
+  outline: none;
+  border: none;
+  color: white;
+  cursor: text;
+  border-radius: 0.25rem;
+  background: #4c4d4f;
+  min-width: 4rem;
+  max-width: 180px;
+  padding: 0.1rem 0.25rem;
+  margin-left: 0.5rem;
+  border: 1px solid transparent;
+  transition: border 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-family: inherit;
 }
 
 .input-container input[type="text"]:focus {
-	border: 1px solid #e92a67;
+  border: 1px solid #e92a67;
 }
 
 .optional-placeholder:empty::before {
-	content: 'Optional';
-	color: rgb(160, 154, 154);
+  content: "Optional";
+  color: rgb(160, 154, 154);
 }
 
 .input-container select {
-	-webkit-appearance: none;
-	appearance: none;
-	padding: 0.2rem 0.4rem;
-	border-radius: 0.25rem;
-	border: 1px solid transparent;
-	margin-left: 0.5rem;
-	background-color: #4c4d4f;
-	color: white;
-	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"/></svg>');
-	background-repeat: no-repeat;
-	background-position: right 0.5rem center;
-	padding-right: 2rem;
-	transition:
-		border 0.2s ease,
-		background-image 0.2s ease;
-	font-size: 0.9rem;
-	cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  margin-left: 0.5rem;
+  background-color: #4c4d4f;
+  color: white;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 2rem;
+  transition:
+    border 0.2s ease,
+    background-image 0.2s ease;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 .input-container select:focus {
-	border: 1px solid #e92a67;
-	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708z"/></svg>');
+  border: 1px solid #e92a67;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708z"/></svg>');
 }

@@ -103,7 +103,13 @@ export const nodeTemplates: NodeTemplate[] = [
     label: "Set Variable",
     category: "Variables",
     type: "setVariableNode",
-    data: { title: "Set Variable", variableName: "value", valueType: "number", value: 0, scope: "macro" },
+    data: {
+      title: "Set Variable",
+      variableName: "value",
+      valueType: "number",
+      value: 0,
+      scope: "macro",
+    },
   },
   {
     label: "Get Variable",
