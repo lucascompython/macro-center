@@ -1444,7 +1444,7 @@
       });
 
       if (filePath) {
-        await writeTextFile(filePath, JSON.stringify(projectData, null, 2));
+        await writeTextFile(filePath, JSON.stringify(projectData));
         console.log("Macro saved to:", filePath);
       }
     } catch (error) {
