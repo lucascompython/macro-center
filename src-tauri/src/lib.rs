@@ -5,6 +5,8 @@ use libmacrocenter::recording::{
     MousePositionEvent, RdevRecorder, RecordedMacro, RecorderBackend, RecordingMouseMode,
 };
 use libmacrocenter::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButtonState, MouseButton as TrayMouseButton};
 use tauri::{Emitter, Manager};
 
 struct SimulatorState {
@@ -142,7 +144,37 @@ pub fn run() {
             app.manage(RecorderState {
                 recorder: RdevRecorder::new(),
             });
+
+            let quit_i = MenuItem::with_id(app, "quit", "Quit Macro Center", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&quit_i])?;
+            let _tray = TrayIconBuilder::new().menu(&menu).icon(app.default_window_icon().unwrap().clone()).on_tray_icon_event(|tray, event| if let TrayIconEvent::Click {
+                    button: TrayMouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } = event {
+                let app = tray.app_handle();
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.unminimize();
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }).on_menu_event(|app, event| match event.id.as_ref() {
+                "quit" => {
+                    app.exit(0);
+                }
+                _ => {
+                    println!("Unknown menu item clicked: {:?}", event.id);
+                }
+
+            })
+                .build(app)?;
+
+
             Ok(())
+        })
+        .on_window_event(|window, event| if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                window.hide().unwrap();
+                api.prevent_close();
         })
         .invoke_handler(tauri::generate_handler![
             simulate_type_text,
