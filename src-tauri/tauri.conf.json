@@ -16,6 +16,7 @@
         "title": "macro-center",
         "width": 1200,
         "height": 800,
+        "visible": false,
         "dragDropEnabled": false
       }
     ],
@@ -24,8 +25,8 @@
     }
   },
   "bundle": {
-    "active": false,
-    "targets": "all",
+    "active": true,
+    "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

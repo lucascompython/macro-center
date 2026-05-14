@@ -249,18 +249,15 @@
     };
   }
 
-  function snapshotSignature(snapshot: EditorSnapshot) {
-    return JSON.stringify(snapshot);
-  }
 
   let lastHistorySnapshot = currentEditorSnapshot();
-  let lastHistorySignature = snapshotSignature(lastHistorySnapshot);
+  let lastHistorySignature = JSON.stringify(lastHistorySnapshot);
 
   function commitHistory() {
     if (applyingHistory) return;
 
     const snapshot = currentEditorSnapshot();
-    const signature = snapshotSignature(snapshot);
+    const signature = JSON.stringify(snapshot);
     if (signature === lastHistorySignature) return;
 
     undoStack.push(lastHistorySnapshot);
@@ -295,7 +292,7 @@
     selectedNodes.length = 0;
     selectedNodes = selectedNodes;
     lastHistorySnapshot = structuredClone(snapshot);
-    lastHistorySignature = snapshotSignature(snapshot);
+    lastHistorySignature = JSON.stringify(snapshot);
     queueMicrotask(() => {
       applyingHistory = false;
     });
@@ -332,10 +329,7 @@
   }
 
   $effect(() => {
-    nodes;
-    edges;
-    variables;
-    submacros;
+    if (!nodes || !edges || !variables || !submacros) return;
     scheduleHistoryCommit();
   });
 
@@ -424,7 +418,7 @@
   };
 
   // DnD Hook
-  const { screenToFlowPosition, toObject, setViewport } = useSvelteFlow();
+  const { screenToFlowPosition, setViewport } = useSvelteFlow();
   const flowNodes = useNodes();
   const flowEdges = useEdges();
 
@@ -433,26 +427,38 @@
   let isRecording = $state(false);
   let recordingMode = $state<RecordingMouseMode>("movesBeforeClicks");
   let showRecordOptions = $state(false);
+  let showExportOptions = $state(false);
   let recordingError = $state("");
+  let exportError = $state("");
   let pendingRecordedMacro = $state<RecordedMacro | undefined>();
   let recordedShortcut = $state("");
   let recordingShortcut = $state(false);
 
+  function startExecution() {
+    if (isRunning) return;
+
+    const syncedSubmacros = syncSubmacroDefinitionsFromSubflows(nodes, edges, submacros);
+    submacros = syncedSubmacros;
+
+    if (!runner) {
+      runner = new MacroRunner(nodes, edges, variables, syncedSubmacros, (snapshot) => {
+        variableSnapshot = snapshot;
+      });
+    }
+    runner.updateGraph(nodes, edges, variables, syncedSubmacros);
+    isRunning = true;
+  }
+
+  function stopExecution() {
+    runner?.cleanup();
+    isRunning = false;
+  }
+
   function toggleExecution() {
     if (isRunning) {
-      runner?.cleanup();
-      isRunning = false;
+      stopExecution();
     } else {
-      const syncedSubmacros = syncSubmacroDefinitionsFromSubflows(nodes, edges, submacros);
-      submacros = syncedSubmacros;
-
-      if (!runner) {
-        runner = new MacroRunner(nodes, edges, variables, syncedSubmacros, (snapshot) => {
-          variableSnapshot = snapshot;
-        });
-      }
-      runner.updateGraph(nodes, edges, variables, syncedSubmacros);
-      isRunning = true;
+      startExecution();
     }
   }
 
@@ -646,6 +652,7 @@
     edgeDropMenu = undefined;
     edgeDropQuery = "";
     showRecordOptions = false;
+    showExportOptions = false;
   }
 
   function isEditingTarget(target: EventTarget | null) {
@@ -1408,37 +1415,65 @@
         isMousePositionMonitoring = false;
       });
 
+    void invoke<string | null>("get_startup_macro")
+      .then(async (macroJson) => {
+        if (!macroJson) return;
+        const flowData = JSON.parse(macroJson) as MacroProjectData;
+        if (!flowData.nodes || !flowData.edges) return;
+        applyProjectData(flowData);
+        await tick();
+        startExecution();
+      })
+      .catch((error) => {
+        console.error("Failed to load startup macro:", error);
+      });
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       unlistenMousePosition?.();
     };
   });
 
+  function currentProjectData(): MacroProjectData {
+    const syncedSubmacros = syncSubmacroDefinitionsFromSubflows(nodes, edges, submacros);
+    submacros = syncedSubmacros;
+
+    return {
+      nodes,
+      edges,
+      variables,
+      submacros: syncedSubmacros,
+    };
+  }
+
+  function applyProjectData(flowData: MacroProjectData) {
+    nodes = flowData.nodes;
+    edges = flowData.edges;
+    variables = flowData.variables ?? [];
+    submacros = flowData.submacros ?? [];
+    commitNodes();
+    commitEdges();
+    variables = variables;
+    submacros = submacros;
+
+    if (flowData.viewport) {
+      const { x, y, zoom } = flowData.viewport;
+      setViewport({ x, y, zoom });
+    }
+
+    lastHistorySnapshot = currentEditorSnapshot();
+    lastHistorySignature = JSON.stringify(lastHistorySnapshot);
+    runner?.updateGraph(nodes, edges, variables, submacros);
+  }
+
   async function saveMacro() {
     try {
-      // Get current flow state
-      const flowData = toObject();
-      const syncedSubmacros = syncSubmacroDefinitionsFromSubflows(
-        flowData.nodes,
-        flowData.edges,
-        submacros,
-      );
-      submacros = syncedSubmacros;
-
-      const projectData: MacroProjectData = {
-        nodes: flowData.nodes,
-        edges: flowData.edges,
-        variables,
-        submacros: syncedSubmacros,
-        viewport: flowData.viewport,
-      };
-
-      // Open save dialog
+      const projectData = currentProjectData();
       const filePath = await save({
         filters: [
           {
-            name: "Macro JSON",
-            extensions: ["json"],
+            name: "Macro Center Macro",
+            extensions: ["mc"],
           },
         ],
       });
@@ -1458,8 +1493,8 @@
         multiple: false,
         filters: [
           {
-            name: "Macro JSON",
-            extensions: ["json"],
+            name: "Macro Center Macro",
+            extensions: ["mc", "json"],
           },
         ],
       });
@@ -1469,20 +1504,58 @@
         const flowData = JSON.parse(content);
 
         if (flowData.nodes && flowData.edges) {
-          nodes = flowData.nodes;
-          edges = flowData.edges;
-          variables = flowData.variables ?? [];
-          submacros = flowData.submacros ?? [];
-
-          if (flowData.viewport) {
-            const { x, y, zoom } = flowData.viewport;
-            setViewport({ x, y, zoom });
-          }
+          applyProjectData(flowData);
           console.log("Macro loaded from:", filePath);
         }
       }
     } catch (error) {
       console.error("Failed to load macro:", error);
+    }
+  }
+
+  async function exportStandaloneMacro() {
+    exportError = "";
+    showExportOptions = false;
+    try {
+      const filePath = await save({
+        filters: [
+          {
+            name: "Standalone Macro",
+            extensions: ["exe"],
+          },
+        ],
+      });
+      if (!filePath) return;
+      await invoke("export_standalone_macro", {
+        projectJson: JSON.stringify(currentProjectData()),
+        destinationPath: filePath,
+      });
+    } catch (error) {
+      exportError = String(error);
+      console.error("Failed to export standalone macro:", error);
+    }
+  }
+
+  async function exportPortableMacroBundle() {
+    exportError = "";
+    showExportOptions = false;
+    try {
+      const filePath = await save({
+        filters: [
+          {
+            name: "Portable Macro Bundle",
+            extensions: ["zip"],
+          },
+        ],
+      });
+      if (!filePath) return;
+      await invoke("export_portable_macro_bundle", {
+        projectJson: JSON.stringify(currentProjectData()),
+        destinationPath: filePath,
+      });
+    } catch (error) {
+      exportError = String(error);
+      console.error("Failed to export portable macro bundle:", error);
     }
   }
 
@@ -1832,6 +1905,24 @@
       </button>
       <button class="panel-btn" onclick={saveMacro}>Save</button>
       <button class="panel-btn" onclick={loadMacro}>Load</button>
+      <div class="record-dropdown">
+        <button
+          class="panel-btn"
+          onclick={() => (showExportOptions = !showExportOptions)}
+          aria-haspopup="menu"
+          aria-expanded={showExportOptions}
+        >
+          Export
+        </button>
+        {#if showExportOptions}
+          <div class="record-menu export-menu" role="menu">
+            <button role="menuitem" onclick={exportStandaloneMacro}> Standalone macro </button>
+            <button role="menuitem" onclick={exportPortableMacroBundle}>
+              Portable macro bundle
+            </button>
+          </div>
+        {/if}
+      </div>
     </Panel>
     <Panel position="top-left">
       {#if showVariables}
@@ -1897,6 +1988,11 @@
   {#if recordingError}
     <div class="recording-error" role="status">
       {recordingError}
+    </div>
+  {/if}
+  {#if exportError}
+    <div class="recording-error" role="status">
+      {exportError}
     </div>
   {/if}
 
@@ -2120,6 +2216,10 @@
     right: 0;
     top: calc(100% + 0.35rem);
     z-index: 20;
+  }
+
+  .export-menu {
+    min-width: 190px;
   }
 
   .record-menu button {

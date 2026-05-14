@@ -11,6 +11,7 @@
     "fs:allow-app-write",
     "fs:allow-app-read",
     "global-shortcut:allow-unregister-all",
-    "global-shortcut:allow-register"
+    "global-shortcut:allow-register",
+    "notification:allow-show"
   ]
 }

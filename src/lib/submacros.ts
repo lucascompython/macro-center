@@ -7,7 +7,12 @@ import {
   valueHandle,
   valueHandleName,
 } from "$lib/graph";
-import type { SubmacroDefinition, SubmacroTriggerOutput, SubmacroValuePort } from "$lib/types";
+import { detachedSubflowNode } from "$lib/macro-project";
+import type {
+  SubmacroDefinition,
+  SubmacroTriggerOutput,
+  SubmacroValuePort,
+} from "$lib/types";
 
 interface CreateSubmacroOptions {
   nodes: Node[];
@@ -95,18 +100,6 @@ function nodeHeight(node: Node) {
   return measured.height ?? measured.measured?.height ?? 180;
 }
 
-function detachNodeFromParent(node: Node): Node {
-  const cloned = structuredClone(node) as Node & {
-    parentId?: string;
-    extent?: string;
-    expandParent?: boolean;
-  };
-  delete cloned.parentId;
-  delete cloned.extent;
-  delete cloned.expandParent;
-  return cloned;
-}
-
 export function createSubmacroFromSelectionModel({
   nodes,
   edges,
@@ -176,12 +169,14 @@ export function createSubmacroFromSelectionModel({
   }
 
   const entryNodeIdSet = new Set<string>();
+  const entryNodeIds: string[] = [];
   for (const edge of incomingTriggerEdges) {
-    entryNodeIdSet.add(edge.target);
+    if (!entryNodeIdSet.has(edge.target)) {
+      entryNodeIdSet.add(edge.target);
+      entryNodeIds.push(edge.target);
+    }
   }
-  let entryNodeIds = Array.from(entryNodeIdSet);
   if (entryNodeIds.length === 0) {
-    entryNodeIds = [];
     for (const node of selected) {
       if (!internalTriggerTargets.has(node.id)) {
         entryNodeIds.push(node.id);
@@ -189,7 +184,7 @@ export function createSubmacroFromSelectionModel({
     }
   }
   if (entryNodeIds.length === 0) {
-    entryNodeIds = [selected[0].id];
+    entryNodeIds.push(selected[0].id);
   }
 
   const usedTriggerOutputIds = new Set<string>();
@@ -202,7 +197,10 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.source}:${sourceHandle}`;
     let outputId = triggerOutputBySource.get(mapKey);
     if (!outputId) {
-      outputId = uniquePortId(portLabelFromHandle(sourceHandle, "done"), usedTriggerOutputIds);
+      outputId = uniquePortId(
+        portLabelFromHandle(sourceHandle, "done"),
+        usedTriggerOutputIds,
+      );
       triggerOutputBySource.set(mapKey, outputId);
       triggerOutputs.push({
         id: outputId,
@@ -230,7 +228,10 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.target}:${targetHandle}`;
     let inputId = valueInputByTarget.get(mapKey);
     if (!inputId) {
-      inputId = uniquePortId(valueHandleName(targetHandle) ?? "input", usedValueInputIds);
+      inputId = uniquePortId(
+        valueHandleName(targetHandle) ?? "input",
+        usedValueInputIds,
+      );
       valueInputByTarget.set(mapKey, inputId);
       valueInputs.push({
         id: inputId,
@@ -256,7 +257,10 @@ export function createSubmacroFromSelectionModel({
     const mapKey = `${edge.source}:${sourceHandle}`;
     let outputId = valueOutputBySource.get(mapKey);
     if (!outputId) {
-      outputId = uniquePortId(valueHandleName(sourceHandle) ?? "value", usedValueOutputIds);
+      outputId = uniquePortId(
+        valueHandleName(sourceHandle) ?? "value",
+        usedValueOutputIds,
+      );
       valueOutputBySource.set(mapKey, outputId);
       valueOutputs.push({
         id: outputId,
@@ -276,7 +280,7 @@ export function createSubmacroFromSelectionModel({
     id: crypto.randomUUID(),
     name: `Submacro ${submacroCount + 1}`,
     nodes: [],
-    edges: structuredClone(internalEdges),
+    edges: internalEdges,
     variables: [],
     entryNodeIds,
     triggerOutputs,
@@ -311,7 +315,8 @@ export function createSubmacroFromSelectionModel({
   for (let index = 0; index < selected.length; index += 1) {
     const node = selected[index];
     groupedNodes[index] = {
-      ...structuredClone(node),
+      ...node,
+      data: { ...node.data },
       position: {
         x: node.position.x - groupX,
         y: node.position.y - groupY,
@@ -408,7 +413,8 @@ export function createSubmacroFromSelectionModel({
 
     const sourceHandle = edge.sourceHandle ?? FLOW_OUT_HANDLE;
     const outputId =
-      triggerOutputBySource.get(`${edge.source}:${sourceHandle}`) ?? triggerOutputs[0].id;
+      triggerOutputBySource.get(`${edge.source}:${sourceHandle}`) ??
+      triggerOutputs[0].id;
     rewrittenEdges.push({
       ...edge,
       id: makeEdgeId({
@@ -423,7 +429,13 @@ export function createSubmacroFromSelectionModel({
   }
 
   return {
-    nodes: createSubflowNodeList(nodes, selectedIds, subflowGroupNode, groupedNodes, submacroNode),
+    nodes: createSubflowNodeList(
+      nodes,
+      selectedIds,
+      subflowGroupNode,
+      groupedNodes,
+      submacroNode,
+    ),
     edges: rewrittenEdges,
     submacro,
   };
@@ -502,8 +514,9 @@ export function syncSubmacroDefinitionsFromSubflows(
       ...submacro,
       name,
       nodes: detachNodesFromParents(childNodes),
-      edges: structuredClone(internalEdges),
-      updatedAt: name === submacro.name ? submacro.updatedAt : new Date().toISOString(),
+      edges: internalEdges,
+      updatedAt:
+        name === submacro.name ? submacro.updatedAt : new Date().toISOString(),
     };
   }
 
@@ -513,7 +526,7 @@ export function syncSubmacroDefinitionsFromSubflows(
 function detachNodesFromParents(nodes: Node[]) {
   const detached = new Array<Node>(nodes.length);
   for (let index = 0; index < nodes.length; index += 1) {
-    detached[index] = detachNodeFromParent(nodes[index]);
+    detached[index] = detachedSubflowNode(nodes[index]);
   }
   return detached;
 }

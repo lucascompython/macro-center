@@ -1,12 +1,20 @@
 use std::sync::Mutex;
 
+mod macro_export;
+
 use libmacrocenter::input::InputSimulator;
 use libmacrocenter::recording::{
     MousePositionEvent, RdevRecorder, RecordedMacro, RecorderBackend, RecordingMouseMode,
 };
 use libmacrocenter::types::{ActionMode, CoordinateMode, MouseButton, ScrollAxis};
+use macro_export::{
+    PORTABLE_MACRO_FILE, StartupMacroSource, StartupMacroState, export_portable_macro_bundle,
+    export_standalone_macro, get_startup_macro, load_startup_macro,
+};
 use tauri::menu::{Menu, MenuItem};
-use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButtonState, MouseButton as TrayMouseButton};
+use tauri::tray::{
+    MouseButton as TrayMouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent,
+};
 use tauri::{Emitter, Manager};
 
 struct SimulatorState {
@@ -110,20 +118,38 @@ fn is_mouse_position_monitoring(state: tauri::State<RecorderState>) -> bool {
     state.recorder.is_mouse_listening()
 }
 
+fn show_editor(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+fn hide_editor(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
+    }
+}
+
 pub fn run() {
+    let startup_macro = load_startup_macro();
+    let startup_macro_json = startup_macro
+        .as_ref()
+        .map(|startup_macro| startup_macro.macro_json.clone());
+    let startup_macro_active = startup_macro_json.is_some();
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                window.show().unwrap();
-                window.set_focus().unwrap();
-            }
+            show_editor(app);
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .setup(|app| {
+        .setup(move |app| {
             #[cfg(target_os = "linux")]
             {
                 let gtk_csd = std::env::var("GTK_CSD").unwrap_or_default();
@@ -144,37 +170,78 @@ pub fn run() {
             app.manage(RecorderState {
                 recorder: RdevRecorder::new(),
             });
+            app.manage(StartupMacroState {
+                macro_json: startup_macro_json,
+            });
 
+            use tauri_plugin_notification::NotificationExt;
+            if startup_macro_active {
+                hide_editor(app.handle());
+
+                let source = startup_macro
+                    .as_ref()
+                    .map(|macro_data| match &macro_data.source {
+                        StartupMacroSource::Embedded => "Standalone macro".to_string(),
+                        StartupMacroSource::AdjacentFile(path) => path
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .unwrap_or(PORTABLE_MACRO_FILE)
+                            .to_string(),
+                    })
+                    .unwrap_or_else(|| "macro".to_string());
+                app.notification()
+                    .builder()
+                    .title("Macro Center")
+                    .body(format!(
+                        "{source} is running. Use the system tray to open the editor or quit."
+                    ))
+                    .show()
+                    .unwrap();
+            } else {
+                show_editor(app.handle());
+            }
+
+            let open_i = MenuItem::with_id(app, "open", "Open Editor", true, None::<&str>)?;
+            let hide_i = MenuItem::with_id(app, "hide", "Hide Editor", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit Macro Center", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&quit_i])?;
-            let _tray = TrayIconBuilder::new().menu(&menu).icon(app.default_window_icon().unwrap().clone()).on_tray_icon_event(|tray, event| if let TrayIconEvent::Click {
-                    button: TrayMouseButton::Left,
-                    button_state: MouseButtonState::Up,
-                    ..
-                } = event {
-                let app = tray.app_handle();
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.unminimize();
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
-            }).on_menu_event(|app, event| match event.id.as_ref() {
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {
-                    println!("Unknown menu item clicked: {:?}", event.id);
-                }
-
-            })
+            let menu = Menu::with_items(app, &[&open_i, &hide_i, &quit_i])?;
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .icon(app.default_window_icon().unwrap().clone())
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: TrayMouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        show_editor(app);
+                    }
+                })
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "open" => {
+                        show_editor(app);
+                    }
+                    "hide" => {
+                        hide_editor(app);
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {
+                        println!("Unknown menu item clicked: {:?}", event.id);
+                    }
+                })
                 .build(app)?;
-
 
             Ok(())
         })
-        .on_window_event(|window, event| if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 window.hide().unwrap();
                 api.prevent_close();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             simulate_type_text,
@@ -187,7 +254,10 @@ pub fn run() {
             is_macro_recording,
             start_mouse_position_monitor,
             stop_mouse_position_monitor,
-            is_mouse_position_monitoring
+            is_mouse_position_monitoring,
+            get_startup_macro,
+            export_standalone_macro,
+            export_portable_macro_bundle
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

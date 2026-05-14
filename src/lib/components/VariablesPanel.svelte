@@ -22,26 +22,35 @@
 
   function addVariable() {
     const nextIndex = variables.length + 1;
-    variables = [
-      ...variables,
-      {
-        id: crypto.randomUUID(),
-        name: `var_${nextIndex}`,
-        type: "number",
-        defaultValue: 0,
-        scope: "macro",
-      },
-    ];
+    variables.push({
+      id: crypto.randomUUID(),
+      name: `var_${nextIndex}`,
+      type: "number",
+      defaultValue: 0,
+      scope: "macro",
+    });
+    variables = variables;
   }
 
   function updateVariable(id: string, patch: Partial<VariableDefinition>) {
-    variables = variables.map((variable) =>
-      variable.id === id ? { ...variable, ...patch } : variable,
-    );
+    for (const variable of variables) {
+      if (variable.id !== id) continue;
+      Object.assign(variable, patch);
+      variables = variables;
+      return;
+    }
   }
 
   function deleteVariable(id: string) {
-    variables = variables.filter((variable) => variable.id !== id);
+    let writeIndex = 0;
+    for (const variable of variables) {
+      if (variable.id === id) continue;
+      variables[writeIndex] = variable;
+      writeIndex += 1;
+    }
+    if (writeIndex === variables.length) return;
+    variables.length = writeIndex;
+    variables = variables;
   }
 
   function changeType(variable: VariableDefinition, type: ValueType) {
