@@ -16,11 +16,11 @@ impl LuaUserData for LuaInputSimulator {
         });
 
         methods.add_method_mut("key_action", |_, this, (key, mode): (String, String)| {
-            let action_mode: ActionMode = mode
-                .parse()
-                .map_err(|e: libmacrocenter::error::MacroCenterError| {
-                    LuaError::RuntimeError(e.to_string())
-                })?;
+            let action_mode: ActionMode =
+                mode.parse()
+                    .map_err(|e: libmacrocenter::error::MacroCenterError| {
+                        LuaError::RuntimeError(e.to_string())
+                    })?;
             this.0
                 .key_action(&key, action_mode)
                 .map_err(|e| LuaError::RuntimeError(e.to_string()))
@@ -29,42 +29,40 @@ impl LuaUserData for LuaInputSimulator {
         methods.add_method_mut(
             "mouse_click",
             |_, this, (button, mode): (String, String)| {
-                let btn: MouseButton = button
-                    .parse()
-                    .map_err(|e: libmacrocenter::error::MacroCenterError| {
-                        LuaError::RuntimeError(e.to_string())
-                    })?;
-                let action_mode: ActionMode = mode
-                    .parse()
-                    .map_err(|e: libmacrocenter::error::MacroCenterError| {
-                        LuaError::RuntimeError(e.to_string())
-                    })?;
+                let btn: MouseButton =
+                    button
+                        .parse()
+                        .map_err(|e: libmacrocenter::error::MacroCenterError| {
+                            LuaError::RuntimeError(e.to_string())
+                        })?;
+                let action_mode: ActionMode =
+                    mode.parse()
+                        .map_err(|e: libmacrocenter::error::MacroCenterError| {
+                            LuaError::RuntimeError(e.to_string())
+                        })?;
                 this.0
                     .mouse_click(btn, action_mode)
                     .map_err(|e| LuaError::RuntimeError(e.to_string()))
             },
         );
 
-        methods.add_method_mut(
-            "mouse_move",
-            |_, this, (x, y, mode): (i32, i32, String)| {
-                let coord_mode: CoordinateMode = mode
-                    .parse()
+        methods.add_method_mut("mouse_move", |_, this, (x, y, mode): (i32, i32, String)| {
+            let coord_mode: CoordinateMode =
+                mode.parse()
                     .map_err(|e: libmacrocenter::error::MacroCenterError| {
                         LuaError::RuntimeError(e.to_string())
                     })?;
-                this.0
-                    .mouse_move(x, y, coord_mode)
-                    .map_err(|e| LuaError::RuntimeError(e.to_string()))
-            },
-        );
+            this.0
+                .mouse_move(x, y, coord_mode)
+                .map_err(|e| LuaError::RuntimeError(e.to_string()))
+        });
 
         methods.add_method_mut("scroll", |_, this, (axis, amount): (String, i32)| {
-            let scroll_axis: ScrollAxis = axis
-                .parse()
-                .map_err(|e: libmacrocenter::error::MacroCenterError| {
-                    LuaError::RuntimeError(e.to_string())
-                })?;
+            let scroll_axis: ScrollAxis =
+                axis.parse()
+                    .map_err(|e: libmacrocenter::error::MacroCenterError| {
+                        LuaError::RuntimeError(e.to_string())
+                    })?;
             this.0
                 .scroll(scroll_axis, amount)
                 .map_err(|e| LuaError::RuntimeError(e.to_string()))
@@ -137,13 +135,15 @@ impl LuaUserData for LuaHotkeyManager {
             HotkeyManager::listen(|event| {
                 let table = lua.create_table().unwrap();
                 table.set("id", event.id).unwrap();
-                table.set(
-                    "state",
-                    match event.state {
-                        HotkeyState::Pressed => "pressed",
-                        HotkeyState::Released => "released",
-                    },
-                ).unwrap();
+                table
+                    .set(
+                        "state",
+                        match event.state {
+                            HotkeyState::Pressed => "pressed",
+                            HotkeyState::Released => "released",
+                        },
+                    )
+                    .unwrap();
                 let _: () = callback.call(table).unwrap();
             });
             Ok(())
@@ -168,8 +168,7 @@ fn macrocenter_lua(lua: &Lua) -> LuaResult<LuaTable> {
     exports.set(
         "InputSimulator",
         lua.create_function(|_, (): ()| {
-            let sim = InputSimulator::new()
-                .map_err(|e| LuaError::RuntimeError(e.to_string()))?;
+            let sim = InputSimulator::new().map_err(|e| LuaError::RuntimeError(e.to_string()))?;
             Ok(LuaInputSimulator(sim))
         })?,
     )?;
@@ -177,8 +176,7 @@ fn macrocenter_lua(lua: &Lua) -> LuaResult<LuaTable> {
     exports.set(
         "HotkeyManager",
         lua.create_function(|_, (): ()| {
-            let mgr = HotkeyManager::new()
-                .map_err(|e| LuaError::RuntimeError(e.to_string()))?;
+            let mgr = HotkeyManager::new().map_err(|e| LuaError::RuntimeError(e.to_string()))?;
             Ok(LuaHotkeyManager(mgr))
         })?,
     )?;
