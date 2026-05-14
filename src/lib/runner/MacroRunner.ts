@@ -34,11 +34,6 @@ function keyFor(nodeId: string, handle?: string | null) {
   return `${nodeId}:${handle ?? FLOW_OUT_HANDLE}`;
 }
 
-function cloneValue(value: MacroValue): MacroValue {
-  if (value === null || typeof value !== "object") return value;
-  return JSON.parse(JSON.stringify(value)) as MacroValue;
-}
-
 class GraphIndex {
   readonly nodesById = new Map<string, Node>();
   readonly triggerOutgoing = new Map<string, Edge[]>();
@@ -131,12 +126,12 @@ class ExecutionContext {
         try {
           return JSON.parse(raw) as MacroValue;
         } catch {
-          return cloneValue(variable.defaultValue);
+          return structuredClone(variable.defaultValue);
         }
       }
     }
 
-    return cloneValue(variable.defaultValue);
+    return structuredClone(variable.defaultValue);
   }
 
   hasLocalVariable(name: string) {
