@@ -69,6 +69,8 @@ function previewValueFromNode(node: Node, outputName: string, lookup: ValueSourc
       return valueToInput(data.value as MacroValue);
     case "compareNode":
       return "true/false";
+    case "shellCommandNode":
+      return `${nodeTitle(node)}.${outputName}`;
     case "submacroNode":
       return `${nodeTitle(node)}.${outputName}`;
     default: {
@@ -92,7 +94,16 @@ export function resolveConnectedValuePreview(
   const connections = store.connectionLookup.get(
     connectionLookupKey(nodeId, "target", targetHandle),
   );
-  const connection = connections?.values().next().value;
+  let connection = connections?.values().next().value;
+  if (!connection) {
+    for (let index = 0; index < store.edges.length; index += 1) {
+      const edge = store.edges[index];
+      if (edge.target === nodeId && edge.targetHandle === targetHandle) {
+        connection = edge;
+        break;
+      }
+    }
+  }
   if (!connection) return undefined;
 
   const sourceNode = store.nodeLookup.get(connection.source)?.internals?.userNode;

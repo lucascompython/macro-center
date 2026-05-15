@@ -64,20 +64,14 @@
 <Handle
   type="target"
   position={Position.Top}
-  id={valueHandle("condition")}
-  style="left: 25%; border-color: #38d0ff; background: #102a36"
-/>
-<Handle
-  type="target"
-  position={Position.Top}
   id={valueHandle("left")}
-  style="left: 50%; border-color: #38d0ff; background: #102a36"
+  style="left: 34%; border-color: #38d0ff; background: #102a36"
 />
 <Handle
   type="target"
   position={Position.Top}
   id={valueHandle("right")}
-  style="left: 75%; border-color: #38d0ff; background: #102a36"
+  style="left: 66%; border-color: #38d0ff; background: #102a36"
 />
 <Handle type="source" position={Position.Right} id="body" style="top: 64%; border-color: #ffc857" />
 <Handle type="source" position={Position.Right} id="done" style="top: 84%; border-color: #27d209" />

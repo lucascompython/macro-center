@@ -178,3 +178,8 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - Add a cmd node that can run arbitrary shell commands
 - Scheduler node that can run macros at specific times
 - Image, OCR and Pixel change recognition
+
+- Fix bug where pasting copied node selects also original node
+- Fix bug at least on linux where saving a macro doesnt save the extension so the user has to add it manually, it should like this: if there isnt an extension, add .mc, if there is an extension but it isnt .mc, append .mc to it, if there is an extension and it is .mc, do nothing
+- Remove frontend tauri plugins where we dont use them in the frontend
+- Optimize the logic for conditionals

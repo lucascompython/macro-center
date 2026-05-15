@@ -47,6 +47,19 @@ export const nodeTemplates: NodeTemplate[] = [
     data: { title: "Scroll Mouse", amount: 3 },
   },
   {
+    label: "Shell Command",
+    category: "Actions",
+    type: "shellCommandNode",
+    data: {
+      title: "Shell Command",
+      command: "",
+      runInBackground: false,
+      timeoutMs: 0,
+      env: "",
+      cwd: "",
+    },
+  },
+  {
     label: "Delay",
     category: "Logic",
     type: "delayNode",

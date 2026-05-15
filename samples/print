@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#sleep 30
+
+echo "FOO: $FOO"
+echo "BAR: $BAR"
+
+
+echo "all: $*"
+
+notify-send "teste"
+
+

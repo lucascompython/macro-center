@@ -64,6 +64,14 @@ export interface ScrollMouseNodeData extends BaseNodeData {
   amount: number;
 }
 
+export interface ShellCommandNodeData extends BaseNodeData {
+  command: string;
+  runInBackground: boolean;
+  timeoutMs: number;
+  env: string;
+  cwd: string;
+}
+
 export interface ConditionalNodeData extends BaseNodeData {
   condition: string;
   conditionExpression?: ConditionExpression;

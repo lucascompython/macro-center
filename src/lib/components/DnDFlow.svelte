@@ -29,6 +29,7 @@
   import MouseMoveNode from "./nodes/MouseMoveNode.svelte";
   import DelayNode from "./nodes/DelayNode.svelte";
   import ScrollMouseNode from "./nodes/ScrollMouseNode.svelte";
+  import ShellCommandNode from "./nodes/ShellCommandNode.svelte";
   import ConditionalNode from "./nodes/ConditionalNode.svelte";
   import SetVariableNode from "./nodes/SetVariableNode.svelte";
   import GetVariableNode from "./nodes/GetVariableNode.svelte";
@@ -249,7 +250,6 @@
     };
   }
 
-
   let lastHistorySnapshot = currentEditorSnapshot();
   let lastHistorySignature = JSON.stringify(lastHistorySnapshot);
 
@@ -341,6 +341,7 @@
     mouseMoveNode: MouseMoveNode,
     delayNode: DelayNode,
     scrollMouseNode: ScrollMouseNode,
+    shellCommandNode: ShellCommandNode,
     conditionalNode: ConditionalNode,
     setVariableNode: SetVariableNode,
     getVariableNode: GetVariableNode,

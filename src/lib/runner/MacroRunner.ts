@@ -12,7 +12,9 @@ import {
   defaultConditionExpression,
   defaultValueForType,
   evaluateConditionValues,
+  parseLiteral,
 } from "$lib/logic";
+import { executeShellCommandNode, type ShellCommandOutput } from "$lib/runner/shell-command";
 import type {
   ConditionExpression,
   MacroValue,
@@ -104,6 +106,7 @@ class ExecutionContext {
   readonly values = new Map<string, MacroValue>();
   readonly definitions = new Map<string, VariableDefinition>();
   readonly submacroOutputs = new Map<string, Record<string, MacroValue>>();
+  readonly shellOutputs = new Map<string, ShellCommandOutput>();
   readonly triggeredOutputs = new Set<string>();
   stepCount = 0;
 
@@ -309,6 +312,11 @@ export class MacroRunner {
         break;
       case "delayNode":
         await this.executeDelayNode(node, context);
+        break;
+      case "shellCommandNode":
+        await executeShellCommandNode(node, context, (node, inputName, fallback) =>
+          this.getInputValue(node, inputName, fallback, context),
+        );
         break;
       case "setVariableNode":
         this.executeSetVariableNode(node, context);
@@ -606,6 +614,14 @@ export class MacroRunner {
         return (node.data.value ?? null) as MacroValue;
       case "submacroNode":
         return context.submacroOutputs.get(node.id)?.[outputName] ?? null;
+      case "shellCommandNode": {
+        const output = context.shellOutputs.get(node.id);
+        if (!output) return null;
+        if (outputName === "exitCode") return output.exitCode;
+        if (outputName === "stdout") return output.stdout;
+        if (outputName === "stderr") return output.stderr;
+        return null;
+      }
       case "setVariableNode":
       case "updateVariableNode":
         return context.getVariable(String(node.data.variableName ?? ""));
@@ -617,32 +633,23 @@ export class MacroRunner {
   }
 
   private evaluateConditionForNode(node: Node, context: ExecutionContext) {
-    if (this.hasInputValue(node, "condition", context)) {
-      return Boolean(this.getInputValue(node, "condition", false, context));
-    }
-
     const expression =
       (node.data.conditionExpression as ConditionExpression | undefined) ??
       this.legacyConditionExpression(node.data.condition as string | undefined);
 
     const left = this.hasInputValue(node, "left", context)
       ? this.getInputValue(node, "left", null, context)
-      : this.evaluateOperand(expression.left, context);
+      : this.evaluateOperand(expression.left);
     const right = this.hasInputValue(node, "right", context)
       ? this.getInputValue(node, "right", null, context)
-      : this.evaluateOperand(expression.right, context);
+      : this.evaluateOperand(expression.right);
 
     return evaluateConditionValues(left, expression.operator, right);
   }
 
-  private evaluateOperand(
-    operand: ValueOperand | undefined,
-    context: ExecutionContext,
-  ): MacroValue {
+  private evaluateOperand(operand: ValueOperand | undefined): MacroValue {
     if (!operand) return null;
-    if (operand.source === "variable") {
-      return context.getVariable(operand.variableName ?? "");
-    }
+    if (operand.source === "variable") return null;
     return operand.value ?? null;
   }
 
@@ -656,7 +663,7 @@ export class MacroRunner {
 
     if (condition && condition !== "true") {
       return {
-        left: { source: "variable", variableName: condition.replace(/^\$/, "") },
+        left: { source: "literal", value: parseLiteral(condition) },
         operator: "truthy",
       };
     }

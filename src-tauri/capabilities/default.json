@@ -12,6 +12,7 @@
     "fs:allow-app-read",
     "global-shortcut:allow-unregister-all",
     "global-shortcut:allow-register",
-    "notification:allow-show"
+    "notification:allow-show",
+    "shell:allow-execute"
   ]
 }

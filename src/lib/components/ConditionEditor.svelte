@@ -56,14 +56,14 @@
       {nodeId}
       inputName={leftInputName}
       value={operandToInput(expression.left)}
-      placeholder="$variable or value"
+      placeholder="value"
       onInput={handleLeftInput}
     />
   {:else}
     <input
       type="text"
       value={operandToInput(expression.left)}
-      placeholder="$variable or value"
+      placeholder="value"
       oninput={(event) => handleLeftInput(event.currentTarget.value)}
     />
   {/if}
@@ -80,14 +80,14 @@
         {nodeId}
         inputName={rightInputName}
         value={operandToInput(expression.right)}
-        placeholder="$variable or value"
+        placeholder="value"
         onInput={handleRightInput}
       />
     {:else}
       <input
         type="text"
         value={operandToInput(expression.right)}
-        placeholder="$variable or value"
+        placeholder="value"
         oninput={(event) => handleRightInput(event.currentTarget.value)}
       />
     {/if}

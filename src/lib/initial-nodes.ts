@@ -82,17 +82,6 @@ export const initialNodes: Node[] = [
       amount: 3,
     },
   },
-  // Conditional node
-  {
-    id: "8",
-    position: { x: 1250, y: 350 },
-    type: "conditionalNode",
-    data: {
-      title: "Conditional",
-      subline: "Branch based on condition",
-      condition: "count > 5",
-    },
-  },
 ];
 
 export const initialEdges: Edge[] = [
@@ -149,14 +138,6 @@ export const initialEdges: Edge[] = [
     source: "6",
     sourceHandle: FLOW_OUT_HANDLE,
     target: "7",
-    targetHandle: FLOW_IN_HANDLE,
-    data: { kind: "trigger" },
-  },
-  {
-    id: "e6-8",
-    source: "6",
-    sourceHandle: FLOW_OUT_HANDLE,
-    target: "8",
     targetHandle: FLOW_IN_HANDLE,
     data: { kind: "trigger" },
   },

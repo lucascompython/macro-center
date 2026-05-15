@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 mod macro_export;
+mod shell_command;
 
 use libmacrocenter::input::InputSimulator;
 use libmacrocenter::recording::{
@@ -11,6 +12,7 @@ use macro_export::{
     PORTABLE_MACRO_FILE, StartupMacroSource, StartupMacroState, export_portable_macro_bundle,
     export_standalone_macro, get_startup_macro, load_startup_macro,
 };
+use shell_command::execute_shell_command;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{
     MouseButton as TrayMouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent,
@@ -140,10 +142,11 @@ pub fn run() {
     let startup_macro_active = startup_macro_json.is_some();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             show_editor(app);
         }))
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -255,6 +258,7 @@ pub fn run() {
             start_mouse_position_monitor,
             stop_mouse_position_monitor,
             is_mouse_position_monitoring,
+            execute_shell_command,
             get_startup_macro,
             export_standalone_macro,
             export_portable_macro_bundle

@@ -16,7 +16,6 @@
   const { updateNodeData } = useSvelteFlow();
   const connection = useConnection();
 
-  // Connection state - cast to compatible type to avoid TS issues
   const connectionState = $derived(
     connection.current as {
       inProgress: boolean;
@@ -71,7 +70,6 @@
     </div>
   </div>
 
-  <!-- Target handle (left) -->
   <Handle
     type="target"
     position={Position.Left}
@@ -82,25 +80,17 @@
   <Handle
     type="target"
     position={Position.Top}
-    id={valueHandle("condition")}
-    style="left: 25%; border-color: #38d0ff; background: #102a36"
-  />
-
-  <Handle
-    type="target"
-    position={Position.Top}
     id={valueHandle("left")}
-    style="left: 50%; border-color: #38d0ff; background: #102a36"
+    style="left: 34%; border-color: #38d0ff; background: #102a36"
   />
 
   <Handle
     type="target"
     position={Position.Top}
     id={valueHandle("right")}
-    style="left: 75%; border-color: #38d0ff; background: #102a36"
+    style="left: 66%; border-color: #38d0ff; background: #102a36"
   />
 
-  <!-- True output handle (right top) -->
   <Handle
     type="source"
     position={Position.Right}
@@ -108,7 +98,6 @@
     style="top: 40%; border-color: #27d209"
   />
 
-  <!-- False output handle (right bottom) -->
   <Handle
     type="source"
     position={Position.Right}
@@ -123,9 +112,9 @@
   }
 
   .top-part {
+    align-items: center;
     display: flex;
     justify-content: space-between;
-    align-items: center;
   }
 
   .settings-icon {
@@ -140,34 +129,34 @@
   }
 
   .subline {
-    font-size: 12px;
     color: #777;
-    margin-top: 0.35rem;
+    font-size: 12px;
     margin-bottom: 0.5rem;
+    margin-top: 0.35rem;
   }
 
   .content {
     background: #2c2d2f;
-    width: 100%;
-    min-height: 0.5rem;
-    cursor: default;
     border-radius: 0.25rem;
+    cursor: default;
+    min-height: 0.5rem;
     padding: 0.25rem 0;
+    width: 100%;
   }
 
   .outputs {
+    align-items: flex-end;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    padding-right: 0.5rem;
-    margin-top: 0.5rem;
     gap: 0.75rem;
+    margin-top: 0.5rem;
+    padding-right: 0.5rem;
   }
 
   .output-label {
+    border-radius: 0.25rem;
     font-size: 0.75rem;
     padding: 0.1rem 0.3rem;
-    border-radius: 0.25rem;
   }
 
   .true-label {

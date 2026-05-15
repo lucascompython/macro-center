@@ -103,22 +103,14 @@ export function valueToInput(value: MacroValue): string {
 
 export function operandToInput(operand?: ValueOperand): string {
   if (!operand) return "";
-  if (operand.source === "variable") return `$${operand.variableName ?? ""}`;
+  if (operand.source === "variable") return "";
   return valueToInput(operand.value ?? "");
 }
 
 export function parseOperandInput(raw: string): ValueOperand {
-  const value = raw.trim();
-  if (value.startsWith("$")) {
-    return {
-      source: "variable",
-      variableName: value.slice(1).trim(),
-    };
-  }
-
   return {
     source: "literal",
-    value: parseLiteral(value),
+    value: parseLiteral(raw),
   };
 }
 
