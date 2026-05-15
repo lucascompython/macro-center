@@ -139,7 +139,7 @@ fn get_fast_dev_rustflags() -> String {
     let linker_arg = if cfg!(target_os = "windows") {
         "-Clinker=rust-lld.exe"
     } else if cfg!(target_os = "linux") {
-        "-Clinker=clang -Clink-arg=--ld-path=wild"
+        "-Clinker=clang -Clink-arg=--ld-path=mold" // use mold while https://github.com/wild-linker/wild/issues/1576 isnt fixed
     } else {
         ""
     };
