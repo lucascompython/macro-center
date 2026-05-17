@@ -127,6 +127,15 @@
     button?: string | null;
   };
 
+  type MacroRecordingStartedPayload = {
+    mode: RecordingMouseMode;
+  };
+
+  type MacroRecordingStoppedPayload = {
+    macroData?: RecordedMacro;
+    error?: string;
+  };
+
   type SavedMouseClick = {
     id: string;
     x: number;
@@ -1398,6 +1407,8 @@
   onMount(() => {
     window.addEventListener("keydown", handleKeyDown);
     let unlistenMousePosition: (() => void) | undefined;
+    let unlistenMacroRecordingStarted: (() => void) | undefined;
+    let unlistenMacroRecordingStopped: (() => void) | undefined;
 
     void listenEvent<MousePositionPayload>("mouse_position", ({ payload }) => {
       scheduleMousePositionUpdate(payload);
@@ -1406,6 +1417,34 @@
       }
     }).then((unlisten) => {
       unlistenMousePosition = unlisten;
+    });
+
+    void listenEvent<MacroRecordingStartedPayload>("macro_recording_started", ({ payload }) => {
+      recordingMode = payload.mode;
+      recordingError = "";
+      pendingRecordedMacro = undefined;
+      isRecording = true;
+      showRecordOptions = false;
+    }).then((unlisten) => {
+      unlistenMacroRecordingStarted = unlisten;
+    });
+
+    void listenEvent<MacroRecordingStoppedPayload>("macro_recording_stopped", ({ payload }) => {
+      isRecording = false;
+      recordingError = payload.error ?? "";
+
+      const recorded = payload.macroData;
+      if (!recorded) return;
+      if (recorded.actions.length === 0) {
+        recordingError = "No actions captured.";
+        return;
+      }
+
+      pendingRecordedMacro = recorded;
+      recordedShortcut = "";
+      recordingShortcut = true;
+    }).then((unlisten) => {
+      unlistenMacroRecordingStopped = unlisten;
     });
 
     void invoke<boolean>("is_mouse_position_monitoring")
@@ -1432,6 +1471,8 @@
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       unlistenMousePosition?.();
+      unlistenMacroRecordingStarted?.();
+      unlistenMacroRecordingStopped?.();
     };
   });
 

@@ -176,7 +176,12 @@ I had previously worked on a similar project called Auto-Spammer, but never got 
 - Make macro files .mc and associate them with Macro Center
 - Scheduler node that can run macros at specific times
 - Image, OCR and Pixel change recognition
+- Add a start menu
+- Add settings page
 
+- Fix bug where when in cycles (while, repeat n, for each) nodes, when pressing stop it doesnt actually stop
+- Add a way to toogle macro execution
+- The window is closed stop execution
 - Fix bug where pasting copied node selects also original node
 - Fix bug at least on linux where saving a macro doesnt save the extension so the user has to add it manually, it should like this: if there isnt an extension, add .mc, if there is an extension but it isnt .mc, append .mc to it, if there is an extension and it is .mc, do nothing
 - Remove frontend tauri plugins where we dont use them in the frontend

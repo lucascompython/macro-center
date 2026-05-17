@@ -12,12 +12,15 @@ use macro_export::{
     PORTABLE_MACRO_FILE, StartupMacroSource, StartupMacroState, export_portable_macro_bundle,
     export_standalone_macro, get_startup_macro, load_startup_macro,
 };
+use serde::Serialize;
 use shell_command::execute_shell_command;
+use tauri::AppHandle;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{
     MouseButton as TrayMouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent,
 };
 use tauri::{Emitter, Manager};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 struct SimulatorState {
     simulator: Mutex<InputSimulator>,
@@ -25,6 +28,19 @@ struct SimulatorState {
 
 struct RecorderState {
     recorder: RdevRecorder,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MacroRecordingStartedPayload {
+    mode: RecordingMouseMode,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MacroRecordingStoppedPayload {
+    macro_data: Option<RecordedMacro>,
+    error: Option<String>,
 }
 
 #[tauri::command]
@@ -87,9 +103,7 @@ fn start_macro_recording(
 
 #[tauri::command]
 fn stop_macro_recording(state: tauri::State<RecorderState>) -> Result<RecordedMacro, String> {
-    let mut recorded = state.recorder.stop_recording().map_err(|e| e.to_string())?;
-    recorded.trim_trailing_mouse_click();
-    Ok(recorded)
+    stop_recording_for_editor(&state)
 }
 
 #[tauri::command]
@@ -118,6 +132,46 @@ fn stop_mouse_position_monitor(state: tauri::State<RecorderState>) {
 #[tauri::command]
 fn is_mouse_position_monitoring(state: tauri::State<RecorderState>) -> bool {
     state.recorder.is_mouse_listening()
+}
+
+fn stop_recording_for_editor(state: &RecorderState) -> Result<RecordedMacro, String> {
+    let mut recorded = state.recorder.stop_recording().map_err(|e| e.to_string())?;
+    recorded.trim_trailing_mouse_click();
+    recorded.trim_trailing_recording_shortcut();
+    Ok(recorded)
+}
+
+fn toggle_global_recording(app: &AppHandle, mode: RecordingMouseMode) {
+    let state = app.state::<RecorderState>();
+    if state.recorder.is_recording() {
+        let payload = match stop_recording_for_editor(&state) {
+            Ok(recorded) => MacroRecordingStoppedPayload {
+                macro_data: Some(recorded),
+                error: None,
+            },
+            Err(error) => MacroRecordingStoppedPayload {
+                macro_data: None,
+                error: Some(error),
+            },
+        };
+        let _ = app.emit("macro_recording_stopped", payload);
+        return;
+    }
+
+    let payload = match state.recorder.start_recording(mode) {
+        Ok(()) => {
+            let _ = app.emit(
+                "macro_recording_started",
+                MacroRecordingStartedPayload { mode },
+            );
+            return;
+        }
+        Err(error) => MacroRecordingStoppedPayload {
+            macro_data: None,
+            error: Some(error.to_string()),
+        },
+    };
+    let _ = app.emit("macro_recording_stopped", payload);
 }
 
 fn show_editor(app: &tauri::AppHandle) {
@@ -176,6 +230,21 @@ pub fn run() {
             app.manage(StartupMacroState {
                 macro_json: startup_macro_json,
             });
+
+            app.global_shortcut()
+                .on_shortcut("Ctrl+Shift+F1", |app, _shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        toggle_global_recording(app, RecordingMouseMode::MovesBeforeClicks);
+                    }
+                })
+                .map_err(|e| e.to_string())?;
+            app.global_shortcut()
+                .on_shortcut("Ctrl+Shift+F2", |app, _shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        toggle_global_recording(app, RecordingMouseMode::AllMoves);
+                    }
+                })
+                .map_err(|e| e.to_string())?;
 
             use tauri_plugin_notification::NotificationExt;
             if startup_macro_active {

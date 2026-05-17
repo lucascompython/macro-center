@@ -140,6 +140,31 @@ impl RecordedMacro {
 
         self.actions.drain(remove_start..self.actions.len());
     }
+
+    pub fn trim_trailing_recording_shortcut(&mut self) {
+        let mut remove_start = self.actions.len();
+        let mut saw_toggle_key = false;
+        let mut saw_modifier = false;
+
+        while remove_start > 0 {
+            let action = &self.actions[remove_start - 1];
+            match action.kind.recording_shortcut_key() {
+                Some("F1" | "F2") => {
+                    saw_toggle_key = true;
+                    remove_start -= 1;
+                }
+                Some("Control" | "Shift") => {
+                    saw_modifier = true;
+                    remove_start -= 1;
+                }
+                _ => break,
+            }
+        }
+
+        if saw_toggle_key && saw_modifier {
+            self.actions.drain(remove_start..self.actions.len());
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -192,6 +217,15 @@ impl RecordedActionKind {
     fn mouse_button(&self) -> Option<(MouseButton, ActionMode)> {
         match self {
             Self::MouseButton { button, mode } => Some((*button, *mode)),
+            _ => None,
+        }
+    }
+
+    fn recording_shortcut_key(&self) -> Option<&str> {
+        match self {
+            Self::Key { key, .. } if matches!(key.as_str(), "Control" | "Shift" | "F1" | "F2") => {
+                Some(key.as_str())
+            }
             _ => None,
         }
     }
@@ -971,6 +1005,93 @@ mod tests {
                 .iter()
                 .all(|action| action.kind.is_mouse_move())
         );
+    }
+
+    #[test]
+    fn trim_trailing_recording_shortcut_removes_global_stop_hotkey_tail() {
+        let mut recorded = RecordedMacro::new(vec![
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "a".to_string(),
+                    mode: ActionMode::Press,
+                },
+            },
+            RecordedAction {
+                delay_ms: 10,
+                kind: RecordedActionKind::Key {
+                    key: "Control".to_string(),
+                    mode: ActionMode::Press,
+                },
+            },
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "Shift".to_string(),
+                    mode: ActionMode::Press,
+                },
+            },
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "F1".to_string(),
+                    mode: ActionMode::Press,
+                },
+            },
+            RecordedAction {
+                delay_ms: 5,
+                kind: RecordedActionKind::Key {
+                    key: "F1".to_string(),
+                    mode: ActionMode::Release,
+                },
+            },
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "Shift".to_string(),
+                    mode: ActionMode::Release,
+                },
+            },
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "Control".to_string(),
+                    mode: ActionMode::Release,
+                },
+            },
+        ]);
+
+        recorded.trim_trailing_recording_shortcut();
+
+        assert_eq!(recorded.actions.len(), 1);
+        assert!(matches!(
+            recorded.actions.last().map(|action| &action.kind),
+            Some(RecordedActionKind::Key { key, .. }) if key == "a"
+        ));
+    }
+
+    #[test]
+    fn trim_trailing_recording_shortcut_keeps_normal_modifier_tail() {
+        let mut recorded = RecordedMacro::new(vec![
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "Control".to_string(),
+                    mode: ActionMode::Press,
+                },
+            },
+            RecordedAction {
+                delay_ms: 0,
+                kind: RecordedActionKind::Key {
+                    key: "Shift".to_string(),
+                    mode: ActionMode::Release,
+                },
+            },
+        ]);
+
+        recorded.trim_trailing_recording_shortcut();
+
+        assert_eq!(recorded.actions.len(), 2);
     }
 
     #[test]
